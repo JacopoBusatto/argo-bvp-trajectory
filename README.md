@@ -40,7 +40,7 @@ argo-bvp-trajectory/
 ├── pyproject.toml
 ├── .gitignore
 └── README.md
-
+```
 
 Public API is re-exported in `argobvp/__init__.py`:
 - integrate_2nd_order, IntegratorMethod
