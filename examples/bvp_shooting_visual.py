@@ -9,13 +9,23 @@ from argobvp.bvp import shoot_v0_to_hit_rT
 # "Truth" analytic XY (non-degenerate)
 # -----------------------------
 def xy_truth(t, T):
+    """
+    Non-degenerate 2D truth:
+    - drift in BOTH x and y
+    - low-frequency meander (cycle-scale)
+    - higher-frequency oscillation
+    """
     t = np.asarray(t, dtype=float)
-    U = np.array([0.18, -0.12])
 
+    # Mean drift (both components!)
+    U = np.array([0.18, -0.12])  # m/s (arbitrary units ok)
+
+    # Low-frequency (cycle-scale)
     wL = 2 * np.pi / (1.5 * T)
     phiL = 0.2
-    A_L = np.array([600.0, 400.0])
+    A_L = np.array([600.0, 400.0])  # meters amplitude
 
+    # Higher-frequency
     wH = 2 * np.pi / 2500.0
     phiHx = 0.4
     phiHy = 1.1
@@ -28,6 +38,7 @@ def xy_truth(t, T):
 
 def xy_v_truth(t, T):
     t = np.asarray(t, dtype=float)
+
     U = np.array([0.18, -0.12])
 
     wL = 2 * np.pi / (1.5 * T)
@@ -61,61 +72,48 @@ def xy_a_truth(t, T):
     return np.stack([ax, ay], axis=1)
 
 
-def cost_surface(
-    t, r0, rT_target, a_fun, *,
-    center_xy, dvx, dvy, n,
-    method=IntegratorMethod.TRAPEZOID
-):
-    """Compute J(v0x,v0y)=||r_xy(T;v0)-rT_xy|| on a grid."""
-    vxc, vyc = float(center_xy[0]), float(center_xy[1])
-    vx = np.linspace(vxc - dvx, vxc + dvx, n)
-    vy = np.linspace(vyc - dvy, vyc + dvy, n)
-    J = np.zeros((n, n), dtype=float)
-
-    for i, vxi in enumerate(vx):
-        for j, vyj in enumerate(vy):
-            v0_try = np.array([vxi, vyj, 0.0])
-            r_try, _ = integrate_2nd_order(
-                t=t, r0=r0, v0=v0_try, a_fun=a_fun,
-                method=method, backward=False
-            )
-            J[j, i] = np.linalg.norm(r_try[-1, :2] - rT_target[:2])
-
-    # argmin in grid coordinates
-    jmin, imin = np.unravel_index(np.argmin(J), J.shape)
-    vmin = np.array([vx[imin], vy[jmin]], dtype=float)
-    return vx, vy, J, vmin
-
-
 def main():
     # -----------------------------
     # Setup
     # -----------------------------
     T = 12_000.0
 
+    # Fine grid only for plotting the truth curve nicely
     t_fine = np.linspace(0.0, T, 120_000 + 1)
+
     xy_fine = xy_truth(t_fine, T)
     r0 = np.array([xy_fine[0, 0], xy_fine[0, 1], 0.0])
 
+    # True v0 from analytic derivative at t=0
     v0_true_xy = xy_v_truth(np.array([0.0]), T)[0]
     v0_true = np.array([v0_true_xy[0], v0_true_xy[1], 0.0])
 
+    # Analytic acceleration function (consistent with the truth)
     def a_true(ti, r, v):
         axy = xy_a_truth(np.array([float(ti)]), T)[0]
         return np.array([axy[0], axy[1], 0.0], dtype=float)
 
-    r_truth_fine, _ = integrate_2nd_order(
-        t=t_fine, r0=r0, v0=v0_true, a_fun=a_true,
-        method=IntegratorMethod.RK4, backward=False
+    # Endpoint target from integrating with true v0 (very accurate)
+    r_truth_fine, v_truth_fine = integrate_2nd_order(
+        t=t_fine,
+        r0=r0,
+        v0=v0_true,
+        a_fun=a_true,
+        method=IntegratorMethod.RK4,
+        backward=False,
     )
     rT_target = r_truth_fine[-1].copy()
 
-    # Coarse grid used in inverse problem
-    N = 2000
+    # -----------------------------
+    # Coarser grid used in the inverse problem (shooting)
+    # -----------------------------
+    N = 2000  # dt ~ 6 s
     t = np.linspace(0.0, T, N + 1)
 
+    # Reasonable guess from endpoints (mean velocity)
     v0_guess = np.array([(rT_target[0] - r0[0]) / T, (rT_target[1] - r0[1]) / T, 0.0])
 
+    # Solve BVP by shooting, compare integrators
     methods = [IntegratorMethod.EULER, IntegratorMethod.TRAPEZOID, IntegratorMethod.RK4]
     sols = {}
 
@@ -125,15 +123,20 @@ def main():
 
     for m in methods:
         res = shoot_v0_to_hit_rT(
-            t=t, r0=r0, rT_target=rT_target, v0_guess=v0_guess,
-            a_fun=a_true, method=m, dims=(0, 1)
+            t=t,
+            r0=r0,
+            rT_target=rT_target,
+            v0_guess=v0_guess,
+            a_fun=a_true,
+            method=m,
+            dims=(0, 1),
         )
         sols[m] = res
         print(f"{m:10s} success={res.success}  v0_opt_xy={res.v0_opt[:2]}  nfev={res.nfev}")
 
+    # Truth on the coarse grid (for error vs time)
     r_truth_on_t, _ = integrate_2nd_order(
-        t=t, r0=r0, v0=v0_true, a_fun=a_true,
-        method=IntegratorMethod.RK4, backward=False
+        t=t, r0=r0, v0=v0_true, a_fun=a_true, method=IntegratorMethod.RK4, backward=False
     )
 
     # -----------------------------
@@ -141,12 +144,17 @@ def main():
     # -----------------------------
     plt.figure()
     plt.plot(r_truth_fine[:, 0], r_truth_fine[:, 1], label="truth (fine)", linewidth=2)
+
     for m in methods:
-        plt.plot(sols[m].r[:, 0], sols[m].r[:, 1], label=f"shooting + {m}")
+        r_m = sols[m].r
+        plt.plot(r_m[:, 0], r_m[:, 1], label=f"shooting + {m}")
+
     plt.scatter([r0[0], rT_target[0]], [r0[1], rT_target[1]], s=40, label="boundary points")
-    plt.xlabel("x"); plt.ylabel("y")
+    plt.xlabel("x")
+    plt.ylabel("y")
     plt.title("BVP via shooting on v0_xy: trajectories (non-degenerate truth)")
-    plt.legend(); plt.grid(True)
+    plt.legend()
+    plt.grid(True)
 
     # -----------------------------
     # Plot 2: Error vs time (XY)
@@ -156,49 +164,71 @@ def main():
         r_m = sols[m].r
         e_xy = np.linalg.norm(r_m[:, :2] - r_truth_on_t[:, :2], axis=1)
         plt.plot(t / 3600.0, e_xy, label=str(m))
+
     plt.xlabel("time (hours)")
     plt.ylabel("||r_xy - r*_xy||")
     plt.title("Reconstruction error over time (XY)")
-    plt.legend(); plt.grid(True)
+    plt.legend()
+    plt.grid(True)
 
     # -----------------------------
-    # Plot 3: Cost surface (FAST + no white space)
+    # Plot 3: Cost surface J(v0x,v0y)
     # -----------------------------
-    # Center on the *solution* so the minimum is always in-window.
-    center0 = sols[IntegratorMethod.TRAPEZOID].v0_opt[:2]
+    # Use a cheaper time grid for cost surface only (makes it MUCH faster)
+    N_cost = 300
+    t_cost = np.linspace(0.0, T, N_cost + 1)
 
-    # Coarse pass (fast)
-    vx1, vy1, J1, vmin1 = cost_surface(
-        t, r0, rT_target, a_true,
-        center_xy=center0, dvx=0.25, dvy=0.25, n=31,
-        method=IntegratorMethod.TRAPEZOID
-    )
+    # Center the window on the optimum so we don't waste space
+    vxc = sols[IntegratorMethod.TRAPEZOID].v0_opt[0]
+    vyc = sols[IntegratorMethod.TRAPEZOID].v0_opt[1]
 
-    # Refine pass (still fast, nicer picture)
-    vx2, vy2, J2, vmin2 = cost_surface(
-        t, r0, rT_target, a_true,
-        center_xy=vmin1, dvx=0.10, dvy=0.10, n=41,
-        method=IntegratorMethod.TRAPEZOID
-    )
+    # Make a window around the guess (tune if needed)
+    dvx = 0.12
+    dvy = 0.12
+    n = 31
+
+    vx = np.linspace(vxc - dvx, vxc + dvx, n)
+    vy = np.linspace(vyc - dvy, vyc + dvy, n)
+    J = np.zeros((n, n), dtype=float)
+
+    # Objective model for the cost surface (use trapezoid)
+    for i, vxi in enumerate(vx):
+        for j, vyj in enumerate(vy):
+            v0_try = np.array([vxi, vyj, 0.0])
+            r_try, _ = integrate_2nd_order(
+                t=t_cost,
+                r0=r0,
+                v0=v0_try,
+                a_fun=a_true,
+                method=IntegratorMethod.TRAPEZOID,
+                backward=False,
+            )
+            J[j, i] = np.linalg.norm(r_try[-1, :2] - rT_target[:2])
 
     plt.figure()
     plt.imshow(
-        J2,
+        J,
         origin="lower",
-        extent=[vx2.min(), vx2.max(), vy2.min(), vy2.max()],
+        extent=[vx.min(), vx.max(), vy.min(), vy.max()],
         aspect="auto",
     )
     plt.colorbar(label="J = ||r_xy(T; v0) - rT_xy||")
 
     plt.scatter([v0_true[0]], [v0_true[1]], marker="x", s=80, label="v0_true")
-    plt.scatter([sols[IntegratorMethod.TRAPEZOID].v0_opt[0]],
-                [sols[IntegratorMethod.TRAPEZOID].v0_opt[1]],
-                marker="o", s=70, label="v0_opt (trapezoid)")
-    plt.scatter([vmin2[0]], [vmin2[1]], marker="+", s=90, label="grid min (refine)")
+    plt.scatter(
+        [sols[IntegratorMethod.TRAPEZOID].v0_opt[0]],
+        [sols[IntegratorMethod.TRAPEZOID].v0_opt[1]],
+        marker="o",
+        s=60,
+        label="v0_opt (trapezoid)",
+    )
 
-    plt.xlabel("v0x"); plt.ylabel("v0y")
-    plt.title("Cost surface around optimum (coarse→refine)")
+    plt.xlabel("v0x")
+    plt.ylabel("v0y")
+    plt.title("Cost surface for shooting (trapezoid objective) — non-degenerate")
     plt.legend()
+    plt.grid(False)
+
     plt.show()
 
 
