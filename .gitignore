@@ -1,0 +1,25 @@
+# --- Python / virtualenv ---
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- pytest ---
+.pytest_cache/
+
+# --- build / packaging ---
+build/
+dist/
+*.egg-info/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- logs / outputs ---
+*.log
+*.out
+*.tmp
