@@ -40,6 +40,7 @@ argo-bvp-trajectory/
 ├── .gitignore
 └── README.md
 
+
 Public API is re-exported in `argobvp/__init__.py`:
 - integrate_2nd_order, IntegratorMethod
 - endpoint_error, point_error_at_time, nearest_index
