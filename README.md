@@ -21,12 +21,12 @@ The project is intentionally built step by step, with strong emphasis on:
 The repository follows a standard "src-layout" Python structure:
 
 argo-bvp-trajectory/
-│
-├── src/argobvp/
-│   ├── __init__.py
-│   ├── integrators.py
-│   ├── bvp.py
-│   └── metrics.py
+├── src/
+│   └── argobvp/
+│       ├── __init__.py
+│       ├── integrators.py
+│       ├── bvp.py
+│       └── metrics.py
 │
 ├── tests/
 │   └── test_*.py
@@ -38,7 +38,7 @@ argo-bvp-trajectory/
 │
 ├── pyproject.toml
 ├── .gitignore
-└── README.md (this document)
+└── README.md
 
 Public API is re-exported in `argobvp/__init__.py`:
 - integrate_2nd_order, IntegratorMethod
