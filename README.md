@@ -20,6 +20,8 @@ The project is intentionally built step by step, with strong emphasis on:
 
 The repository follows a standard "src-layout" Python structure:
 
+```html
+<pre><code>
 argo-bvp-trajectory/
 ├── src/
 │   └── argobvp/
@@ -39,6 +41,7 @@ argo-bvp-trajectory/
 ├── pyproject.toml
 ├── .gitignore
 └── README.md
+</code></pre>```
 
 
 Public API is re-exported in `argobvp/__init__.py`:
