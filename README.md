@@ -243,9 +243,175 @@ Run examples:
   - a natural “next step” from rectangles for Argo-like discrete sampling.
 - RK4 is included primarily as a high-accuracy benchmark to define “truth” trajectories.
 
+------------------------------------------------------------
+8. VERTICAL INTEGRATION MODES (z-dynamics)
+------------------------------------------------------------
+
+Two distinct integration modes are provided on purpose.
+
+They correspond to two different physical assumptions:
+
+- sampled mode: integrate exactly what the IMU measures (discrete az samples)
+- continuous mode: integrate a reconstructed continuous az(t)
+
+The two modes solve different problems and should not be mixed.
+
+In this project, the vertical coordinate z (positive downward)
+can be reconstructed using different assumptions on the available data
+and on the physical meaning of the acceleration signal.
+
+This is particularly important for Argo floats equipped with IMU
+(accelerometer + gyroscope), where vertical motion can be inferred
+both from pressure measurements and from vertical acceleration.
+
 
 ------------------------------------------------------------
-8. ROADMAP / NEXT STEPS
+8.1 Sampled acceleration integration (IMU-consistent)
+------------------------------------------------------------
+
+Function:
+    integrate_z_from_accel_samples(...)
+
+Location:
+    src/argobvp/z_sources.py
+
+This function integrates the vertical motion assuming that the vertical
+acceleration az is available as *discrete samples* at times t[k],
+as provided by an IMU.
+
+The governing equations are:
+
+    dz/dt  = vz
+    dvz/dt = az(t)
+
+but az(t) is assumed to be known only at the sampling instants.
+
+Supported numerical schemes:
+
+- Euler (rectangle rule):
+      vz[k+1] = vz[k] + dt * az[k]
+      z[k+1]  = z[k]  + dt * vz[k]
+
+- Trapezoid:
+      vz[k+1] = vz[k] + dt * (az[k] + az[k+1]) / 2
+      z[k+1]  = z[k]  + dt * (vz[k] + vz[k+1]) / 2
+
+Important properties:
+
+- No interpolation of az is performed.
+- The method operates directly on sampled data.
+- This is the most appropriate approach when az comes from IMU measurements.
+- The comparison between Euler and Trapezoid is clean and reproducible,
+  since it reflects only the numerical quadrature choice.
+
+Limitations:
+
+- RK4 is intentionally NOT supported in this mode, because it requires
+  evaluating az at intermediate times, which is not defined for purely
+  sampled signals.
+
+This mode is therefore the recommended default for Argo-like IMU data.
+
+
+------------------------------------------------------------
+8.2 Continuous acceleration integration (model-based)
+------------------------------------------------------------
+
+Function:
+    integrate_z_from_accel(...)
+
+Location:
+    src/argobvp/z_sources.py
+
+In this mode, the sampled acceleration az is implicitly promoted to a
+continuous function az(t) via interpolation.
+
+The vertical ODE system is then integrated assuming that az(t) can be
+evaluated at arbitrary times, including intermediate stages of the
+integration scheme.
+
+Supported numerical schemes include:
+
+- Euler
+- Trapezoid
+- RK4
+
+Important characteristics:
+
+- The numerical result depends both on the integration scheme AND on
+  the chosen interpolation model for az(t).
+- This mode is suitable when az(t) represents a reconstructed or modeled
+  continuous signal (e.g. filtered IMU data, spline reconstruction,
+  or analytical forcing in synthetic tests).
+- RK4 can be used as a high-accuracy benchmark under these assumptions.
+
+Caveat:
+
+- Comparisons between Euler, Trapezoid, and RK4 in this mode do NOT isolate
+  the effect of the integration scheme alone, since the interpolation of
+  az(t) plays a central role.
+- In particular, Euler may occasionally outperform Trapezoid on specific
+  metrics due to cancellation effects or interpolation artifacts.
+
+For this reason, this mode is mainly used for:
+- synthetic benchmarks
+- sensitivity experiments
+- comparison against analytical solutions
+
+Key conceptual difference:
+
+- integrate_z_from_accel_samples integrates discrete data:
+      "What does the IMU actually measure?"
+
+- integrate_z_from_accel integrates a continuous model:
+      "What would the trajectory be if az(t) were a smooth function?"
+
+Both are correct, but they answer different questions.
+
+
+------------------------------------------------------------
+8.3 Relation to pressure-based depth
+------------------------------------------------------------
+
+In real Argo datasets, depth (or pressure) provides an independent
+measurement of z(t).
+
+The framework is designed so that:
+
+- z(t) reconstructed from acceleration can be directly compared to
+  z(t) derived from pressure.
+- Tests can be constructed to quantify the error introduced by:
+    - numerical integration
+    - acceleration sampling
+    - bias or noise in az
+
+Future developments will allow:
+- switching between pressure-based z and acceleration-based z
+- using pressure-derived z as a constraint in boundary value problems
+  for trajectory reconstruction
+
+
+------------------------------------------------------------
+8.4 Recommended usage summary
+------------------------------------------------------------
+
+For real Argo IMU data:
+    → use integrate_z_from_accel_samples
+
+For synthetic tests or continuous forcing models:
+    → use integrate_z_from_accel
+
+For method-comparison tests (Euler vs Trapezoid):
+    → always use sampled mode
+
+For high-accuracy reference solutions:
+    → use RK4 in continuous mode
+
+This separation ensures numerical clarity, reproducibility,
+and physical interpretability of the results.
+
+------------------------------------------------------------
+9. ROADMAP / NEXT STEPS
 ------------------------------------------------------------
 
 Planned next steps (already discussed in the project):
@@ -261,3 +427,62 @@ Planned next steps (already discussed in the project):
      relative to surface GPS positions.
 
 This document will evolve together with the code.
+
+------------------------------------------------------------
+10. Vertical integration tests
+------------------------------------------------------------
+
+Specific tests are included to validate vertical (z) reconstruction
+under Argo-like conditions.
+
+These tests focus on physically meaningful diagnostics rather than
+formal numerical order only.
+
+Main vertical tests include:
+
+- test_z_from_accel_samples.py
+    Verifies vertical reconstruction when az is treated as sampled IMU data.
+    Demonstrates that trapezoidal integration outperforms Euler
+    in a robust, sampling-consistent setting.
+
+- test_z_phase_errors_vs_dt.py
+    Quantifies vertical reconstruction errors at key Argo phases:
+        - end of descent
+        - start of ascent
+        - end of cycle
+    as a function of the sampling interval Δt.
+
+    Errors are evaluated using time interpolation to avoid
+    grid-alignment artefacts.
+
+These tests are designed to be:
+- robust to phase-node alignment,
+- representative of real Argo sampling,
+- suitable for uncertainty budgeting.
+
+------------------------------------------------------------
+11. Vertical reconstruction examples
+------------------------------------------------------------
+
+Additional visual scripts focus on vertical (z) dynamics.
+
+- examples/z_phase_errors_visual.py
+
+Purpose:
+Visualize how vertical reconstruction errors depend on:
+- integration method,
+- sampling interval Δt,
+- Argo phase (descent end, ascent start, final).
+
+The script shows:
+- reconstructed z(t) vs analytic reference,
+- absolute error |z - z_truth| over time,
+- phase errors vs Δt (log-log),
+- separation between Euler, Trapezoid, and RK4 in appropriate regimes.
+
+The example highlights the difference between:
+- sampled-data integration (IMU-consistent),
+- continuous-forcing integration (benchmark).
+
+These scripts are meant for diagnostic exploration and
+scientific interpretation, not for automated validation.
