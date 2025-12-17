@@ -64,6 +64,11 @@ class PathsConfig:
     traj: str
     aux: str
 
+@dataclass(frozen=True)
+class AttitudeConfig:
+    mode: Literal["safe_tilt_only", "complementary"] = "safe_tilt_only"
+    dt_max: float = 300.0
+    alpha: float = 0.98
 
 @dataclass(frozen=True)
 class PreprocessConfig:
@@ -71,9 +76,11 @@ class PreprocessConfig:
     paths: PathsConfig
     imu: IMUConfig = IMUConfig()
 
-    # segmentation / helpers
-    pres_surface_max: float = 5.0  # for optional diagnostics
-    time_reference: str = "1950-01-01T00:00:00Z"  # Argo JULD epoch
+    pres_surface_max: float = 5.0
+    time_reference: str = "1950-01-01T00:00:00Z"
+
+    attitude: AttitudeConfig = AttitudeConfig()
+
 
 
 def load_config(path: str | Path) -> PreprocessConfig:
@@ -81,25 +88,61 @@ def load_config(path: str | Path) -> PreprocessConfig:
     with path.open("r", encoding="utf-8") as f:
         raw: Dict[str, Any] = yaml.safe_load(f)
 
-    # very small “manual” parsing to keep dependencies minimal
-    paths = PathsConfig(**raw["paths"])
-    imu_raw = raw.get("imu", {})
+    def lower_keys(d: Any) -> Any:
+        if isinstance(d, dict):
+            return {str(k).lower(): lower_keys(v) for k, v in d.items()}
+        return d
 
-    accel = AccelCalib(**imu_raw.get("accel", {}))
-    gyro = GyroCalib(**imu_raw.get("gyro", {}))
-    mag = MagCalib(**imu_raw.get("mag", {}))
+    raw_l = lower_keys(raw)
+
+    # paths
+    if "paths" not in raw_l:
+        raise ValueError("Missing required key: paths")
+    paths = PathsConfig(**raw_l["paths"])
+
+    # imu block (case-insensitive)
+    imu_raw = raw_l.get("imu", {})
+
+    # gyro block: allow both imu.gyro and top-level gyro
+    gyro_raw = imu_raw.get("gyro", raw_l.get("gyro", {}))
+    accel_raw = imu_raw.get("accel", raw_l.get("accel", {}))
+    mag_raw = imu_raw.get("mag", raw_l.get("mag", {}))
+
+    # Validate gyro.scale presence (avoid silent default=1.0)
+    if "scale" not in gyro_raw:
+        raise ValueError(
+            "gyro.scale missing in YAML. "
+            "Expected location: imu: gyro: scale: <float> (or top-level gyro: scale: <float>)."
+        )
+
+    accel = AccelCalib(**accel_raw)
+    gyro = GyroCalib(
+        scale=float(gyro_raw.get("scale")),
+        units=str(gyro_raw.get("units", "rad/s")),
+        bias_counts=gyro_raw.get("bias_counts", None),
+    )
+    mag = MagCalib(**mag_raw)
+
     imu = IMUConfig(
-        frame=imu_raw.get("frame", "NED"),
+        frame=str(imu_raw.get("frame", "NED")).upper(),
         g=float(imu_raw.get("g", 9.80665)),
         accel=accel,
         gyro=gyro,
         mag=mag,
     )
 
+    att_raw = raw_l.get("attitude", {})
+    att = AttitudeConfig(
+        mode=str(att_raw.get("mode", "safe_tilt_only")),
+        dt_max=float(att_raw.get("dt_max", 300.0)),
+        alpha=float(att_raw.get("alpha", 0.98)),
+    )
+
     return PreprocessConfig(
-        platform=str(raw["platform"]),
+        platform=str(raw_l["platform"]),
         paths=paths,
         imu=imu,
-        pres_surface_max=float(raw.get("pres_surface_max", 5.0)),
-        time_reference=str(raw.get("time_reference", "1950-01-01T00:00:00Z")),
+        pres_surface_max=float(raw_l.get("pres_surface_max", 5.0)),
+        time_reference=str(raw_l.get("time_reference", "1950-01-01T00:00:00Z")),
+        attitude=att,
     )

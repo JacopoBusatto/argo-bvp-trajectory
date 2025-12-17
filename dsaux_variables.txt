@@ -1,0 +1,1275 @@
+=== GLOBAL ATTRIBUTES ===
+title: Argo float trajectory auxiliary data file
+institution: CORIOLIS
+source: Argo float
+history: 2025-10-27T15:34:13Z creation; 2025-12-14T12:21:26Z last update (coriolis float real time data processing)
+references: http://www.argodatamgt.org/Documentation
+user_manual_version: 1.0
+Conventions: CF-1.6 Coriolis-Argo-Aux-1.0
+featureType: trajectoryCoriolisAux
+decoder_version: CODA_082f
+id: https://doi.org/10.17882/42182
+comment_on_resolution: PRES variable resolutions depend on measurement codes
+comment_on_measurement_code: Meaning of some specific measurement codes for this float: 89: cycle start time, 189: buoyancy action during descent to park pressure, 190: descending profile dated levels, 203: descending profile deepest level, 289: buoyancy action during drift at park pressure, 297: min pressure sampled during drift at park pressure, 298: max pressure sampled during drift at park pressure, 301: representative park measurement, 389: buoyancy action during descent to profile pressure, 398: max pressure sampled during descent to profile pressure, 489: buoyancy action during drift at profile pressure, 497: min pressure sampled during drift at profile pressure, 498: max pressure sampled during drift at profile pressure, 503: ascending profile deepest level, 589: buoyancy action during ascending profile, 590: ascending profile dated levels, 599: last pumped CTD raw measurement sampled during ascending profile, 689: start of surface final pump action to acquire max buoyancy, 711: in-air samples, part of surface sequence, relative to TST, 799: in air single measurement, relative to TET, 901: grounded information
+
+
+=== VARIABLES ===
+
+--- DATA_TYPE ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Data type
+conventions: Reference table AUX_1
+
+--- FORMAT_VERSION ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: File format version
+
+--- REFERENCE_DATE_TIME ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Date of reference for Julian days
+conventions: YYYYMMDDHHMISS
+
+--- DATE_CREATION ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Date of file creation
+conventions: YYYYMMDDHHMISS
+
+--- DATE_UPDATE ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Date of update of this file
+conventions: YYYYMMDDHHMISS
+
+--- PLATFORM_NUMBER ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Float unique identifier
+conventions: WMO float identifier : A9IIIII
+
+--- PROJECT_NAME ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Name of the project
+
+--- PI_NAME ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Name of the principal investigator
+
+--- TRAJECTORY_PARAMETERS ---
+dimensions: ('N_PARAM',)
+shape: (52,)
+dtype: object
+long_name: List of available parameters for the station
+conventions: Reference table AUX_3a
+
+--- DATA_CENTRE ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Data centre in charge of float data processing
+conventions: Argo reference table 4
+
+--- DATA_STATE_INDICATOR ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Degree of processing the data have passed through
+conventions: Argo reference table 6
+
+--- PLATFORM_TYPE ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Type of float
+conventions: Argo reference table 23
+
+--- FLOAT_SERIAL_NO ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Serial number of the float
+
+--- FIRMWARE_VERSION ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Instrument firmware version
+
+--- WMO_INST_TYPE ---
+dimensions: ()
+shape: ()
+dtype: object
+long_name: Coded instrument type
+conventions: Argo reference table 8
+
+--- JULD ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: datetime64[ns]
+long_name: Julian day (UTC) of each measurement relative to REFERENCE_DATE_TIME
+standard_name: time
+conventions: Relative julian days with decimal part (as parts of day)
+resolution: 1.1574074074074073e-05
+axis: T
+
+--- JULD_STATUS ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: Status of the date and time
+conventions: Argo reference table 19
+
+--- JULD_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: Quality on date and time
+conventions: Argo reference table 2
+
+--- JULD_ADJUSTED ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: datetime64[ns]
+long_name: Adjusted julian day (UTC) of each measurement relative to REFERENCE_DATE_TIME
+standard_name: time
+conventions: Relative julian days with decimal part (as parts of day)
+resolution: 1.1574074074074073e-05
+axis: T
+
+--- JULD_ADJUSTED_STATUS ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: Status of the JULD_ADJUSTED date
+conventions: Argo reference table 19
+
+--- JULD_ADJUSTED_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: Quality on adjusted date and time
+conventions: Argo reference table 2
+
+--- CYCLE_NUMBER ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float64
+long_name: Float cycle number of the measurement
+conventions: 0...N, 0 : launch cycle, 1 : first complete cycle
+
+--- CYCLE_NUMBER_ADJUSTED ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float64
+long_name: Adjusted float cycle number of the measurement
+conventions: 0...N, 0 : launch cycle, 1 : first complete cycle
+
+--- MEASUREMENT_CODE ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float64
+long_name: Flag referring to a measurement event in the cycle
+conventions: Argo reference table 15
+
+--- PRES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Sea water pressure, equals 0 at sea-level
+standard_name: sea_water_pressure
+units: decibar
+valid_min: 0.0
+valid_max: 12000.0
+C_format: %8.2f
+FORTRAN_format: F8.2
+resolution: 0.009999999776482582
+comment_on_resolution: PRES resolution is 0.01 dbar for CTD sensor and 0.1 dbar for BGC sensors, except for measurement codes [189 150 250 289 297 298 389 398 489 589 901] for which PRES resolution is 1 dbar
+axis: Z
+
+--- PRES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- PRES_ADJUSTED ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Sea water pressure, equals 0 at sea-level
+standard_name: sea_water_pressure
+units: decibar
+valid_min: 0.0
+valid_max: 12000.0
+C_format: %8.2f
+FORTRAN_format: F8.2
+resolution: 0.009999999776482582
+comment_on_resolution: PRES_ADJUSTED resolution is 0.01 dbar for CTD sensor and 0.1 dbar for BGC sensors, except for measurement codes [189 150 250 289 297 298 389 398 489 589 901] for which PRES_ADJUSTED resolution is 1 dbar
+axis: Z
+
+--- PRES_ADJUSTED_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- PRES_ADJUSTED_ERROR ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Contains the error on the adjusted values as determined by the delayed mode QC process
+units: decibar
+C_format: %8.2f
+FORTRAN_format: F8.2
+resolution: 0.009999999776482582
+
+--- TEMP_COUNT_INERTIAL ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Temperature of the INERTIAL sensor
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- TEMP_COUNT_INERTIAL_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- LINEAR_ACCELERATION_COUNT_X ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Linear acceleration along the X axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- LINEAR_ACCELERATION_COUNT_X_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- LINEAR_ACCELERATION_COUNT_Y ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Linear acceleration along the Y axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- LINEAR_ACCELERATION_COUNT_Y_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- LINEAR_ACCELERATION_COUNT_Z ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Linear acceleration along the Z axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- LINEAR_ACCELERATION_COUNT_Z_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- ANGULAR_RATE_COUNT_X ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Angular rate along the X axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- ANGULAR_RATE_COUNT_X_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- ANGULAR_RATE_COUNT_Y ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Angular rate along the Y axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- ANGULAR_RATE_COUNT_Y_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- ANGULAR_RATE_COUNT_Z ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Angular rate along the Z axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- ANGULAR_RATE_COUNT_Z_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- MAGNETIC_FIELD_COUNT_X ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Magnetic field along the X axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- MAGNETIC_FIELD_COUNT_X_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- MAGNETIC_FIELD_COUNT_Y ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Magnetic field along the Y axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- MAGNETIC_FIELD_COUNT_Y_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- MAGNETIC_FIELD_COUNT_Z ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Magnetic field along the Z axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- MAGNETIC_FIELD_COUNT_Z_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- BLACK_NB_IMAGE_PARTICLES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Number of uvp images without light in the slice
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- BLACK_NB_IMAGE_PARTICLES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- BLACK_TEMP_PARTICLES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Internal temperature of the UVP6 sensor without light
+units: degree_Celsius
+C_format: %.4f
+FORTRAN_format: F.4
+resolution: 9.999999747378752e-05
+
+--- BLACK_TEMP_PARTICLES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- BLACK_NB_SIZE_SPECTRA_PARTICLES ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES5')
+shape: (70493, 5)
+dtype: float64
+long_name: Number of particles without light per class of the slice
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- BLACK_NB_SIZE_SPECTRA_PARTICLES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_DOWN_IRR_INTEGRATION_TIME ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Integration time of the radiometer
+units: msec
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- RADIOMETER_DOWN_IRR_INTEGRATION_TIME_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_DOWN_IRR_PRE_PRES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+units: decibar
+C_format: %7.2f
+FORTRAN_format: F7.2
+resolution: 0.009999999776482582
+
+--- RADIOMETER_DOWN_IRR_PRE_PRES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_DOWN_IRR_POST_PRES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+units: decibar
+C_format: %7.2f
+FORTRAN_format: F7.2
+resolution: 0.009999999776482582
+
+--- RADIOMETER_DOWN_IRR_POST_PRES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_DOWN_IRR_PRE_INCLINATION ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: The inclination angle (0-360) taken before the light measurement
+units: degree
+valid_min: 0.0
+valid_max: 360.0
+C_format: %.5f
+FORTRAN_format: F.5
+resolution: 9.999999747378752e-06
+
+--- RADIOMETER_DOWN_IRR_PRE_INCLINATION_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_DOWN_IRR_POST_INCLINATION ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: The inclination angle (0-360) taken after the light measurement
+units: degree
+valid_min: 0.0
+valid_max: 360.0
+C_format: %.5f
+FORTRAN_format: F.5
+resolution: 9.999999747378752e-06
+
+--- RADIOMETER_DOWN_IRR_POST_INCLINATION_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_DOWN_IRR_DARK_AVERAGE ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- RADIOMETER_DOWN_IRR_DARK_AVERAGE_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RAW_DOWNWELLING_IRRADIANCE ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float64
+long_name: Raw downwelling irradiance spectrum
+units: count
+C_format: %9.1f
+FORTRAN_format: F9.1
+resolution: 1.0
+
+--- RAW_DOWNWELLING_IRRADIANCE_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- DOWN_IRRADIANCE_SPECTRUM ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Downwelling irradiance spectrum
+units: W/m^2/nm
+C_format: %.6f
+FORTRAN_format: F.6
+resolution: 9.999999974752427e-07
+
+--- DOWN_IRRADIANCE_SPECTRUM_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- DOWN_IRRADIANCE_SPECTRUM_ADJUSTED ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Downwelling irradiance spectrum
+units: W/m^2/nm
+C_format: %.6f
+FORTRAN_format: F.6
+resolution: 9.999999974752427e-07
+
+--- DOWN_IRRADIANCE_SPECTRUM_ADJUSTED_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- DOWN_IRRADIANCE_SPECTRUM_ADJUSTED_ERROR ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Contains the error on the adjusted values as determined by the delayed mode QC process
+units: W/m^2/nm
+C_format: %.6f
+FORTRAN_format: F.6
+resolution: 9.999999974752427e-07
+
+--- DOWN_IRRADIANCE_SPECTRUM_WAVELENGTHS ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Wavelength associated to downwelling irradiance spectrum
+units: nm
+C_format: %.3f
+FORTRAN_format: F.3
+resolution: 0.0010000000474974513
+
+--- DOWN_IRRADIANCE_SPECTRUM_WAVELENGTHS_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_UP_RAD_INTEGRATION_TIME ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Integration time of the radiometer
+units: msec
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- RADIOMETER_UP_RAD_INTEGRATION_TIME_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_UP_RAD_PRE_PRES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+units: decibar
+C_format: %7.2f
+FORTRAN_format: F7.2
+resolution: 0.009999999776482582
+
+--- RADIOMETER_UP_RAD_PRE_PRES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_UP_RAD_POST_PRES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+units: decibar
+C_format: %7.2f
+FORTRAN_format: F7.2
+resolution: 0.009999999776482582
+
+--- RADIOMETER_UP_RAD_POST_PRES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_UP_RAD_PRE_INCLINATION ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: The inclination angle (0-360) taken before the light measurement
+units: degree
+valid_min: 0.0
+valid_max: 360.0
+C_format: %.5f
+FORTRAN_format: F.5
+resolution: 9.999999747378752e-06
+
+--- RADIOMETER_UP_RAD_PRE_INCLINATION_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_UP_RAD_POST_INCLINATION ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: The inclination angle (0-360) taken after the light measurement
+units: degree
+valid_min: 0.0
+valid_max: 360.0
+C_format: %.5f
+FORTRAN_format: F.5
+resolution: 9.999999747378752e-06
+
+--- RADIOMETER_UP_RAD_POST_INCLINATION_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RADIOMETER_UP_RAD_DARK_AVERAGE ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- RADIOMETER_UP_RAD_DARK_AVERAGE_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- RAW_UPWELLING_RADIANCE ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Raw upwelling radiance spectrum
+units: count
+C_format: %9.1f
+FORTRAN_format: F9.1
+resolution: 1.0
+
+--- RAW_UPWELLING_RADIANCE_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- UP_RADIANCE_SPECTRUM ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Upwelling radiance spectrum
+units: W/m^2/nm
+C_format: %.6f
+FORTRAN_format: F.6
+resolution: 9.999999974752427e-07
+
+--- UP_RADIANCE_SPECTRUM_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- UP_RADIANCE_SPECTRUM_ADJUSTED ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Upwelling radiance spectrum
+units: W/m^2/nm
+C_format: %.6f
+FORTRAN_format: F.6
+resolution: 9.999999974752427e-07
+
+--- UP_RADIANCE_SPECTRUM_ADJUSTED_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- UP_RADIANCE_SPECTRUM_ADJUSTED_ERROR ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Contains the error on the adjusted values as determined by the delayed mode QC process
+units: W/m^2/nm
+C_format: %.6f
+FORTRAN_format: F.6
+resolution: 9.999999974752427e-07
+
+--- UP_RADIANCE_SPECTRUM_WAVELENGTHS ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES100')
+shape: (70493, 100)
+dtype: float32
+long_name: Wavelength associated to upwelling radiance spectrum
+units: nm
+C_format: %.3f
+FORTRAN_format: F.3
+resolution: 0.0010000000474974513
+
+--- UP_RADIANCE_SPECTRUM_WAVELENGTHS_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- NB_IMAGE_PARTICLES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Number of uvp images in the slice
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- NB_IMAGE_PARTICLES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- TEMP_PARTICLES ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Average uvp temperature of the slice
+units: degree_Celsius
+C_format: %.3f
+FORTRAN_format: F.3
+resolution: 0.0010000000474974513
+
+--- TEMP_PARTICLES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- NB_SIZE_SPECTRA_PARTICLES ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES18')
+shape: (70493, 18)
+dtype: float64
+long_name: Number of particles per size class of the slice
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- NB_SIZE_SPECTRA_PARTICLES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- GREY_SIZE_SPECTRA_PARTICLES ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES18')
+shape: (70493, 18)
+dtype: float64
+long_name: Average grey level per particle per size class
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- GREY_SIZE_SPECTRA_PARTICLES_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- CONCENTRATION_LPM ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES18')
+shape: (70493, 18)
+dtype: float32
+long_name: Concentration of particles per size class in the slice
+units: #/L
+C_format: %.3f
+FORTRAN_format: F.3
+resolution: 0.0010000000474974513
+
+--- CONCENTRATION_LPM_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- NB_IMAGE_CATEGORY ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Number of uvp images in the slice
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- NB_IMAGE_CATEGORY_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- NB_CATEGORY ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Number of different taxonomy categories found in the record
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- NB_CATEGORY_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- INDEX_CATEGORY ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES40')
+shape: (70493, 40)
+dtype: float32
+long_name: Index of the taxonomy category
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- INDEX_CATEGORY_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- NB_OBJECT_CATEGORY ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES40')
+shape: (70493, 40)
+dtype: float32
+long_name: Number of objects of a specific category in the slice
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- NB_OBJECT_CATEGORY_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- OBJECT_MEAN_VOLUME_CATEGORY ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES40')
+shape: (70493, 40)
+dtype: float32
+long_name: Average volume per object of a specific category in the slice
+units: pixel^3
+C_format: %.3f
+FORTRAN_format: F.3
+resolution: 0.0010000000474974513
+
+--- OBJECT_MEAN_VOLUME_CATEGORY_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- OBJECT_MEAN_GREY_LEVEL_CATEGORY ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES40')
+shape: (70493, 40)
+dtype: float64
+long_name: Average grey level per object of a specific category in the slice
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- OBJECT_MEAN_GREY_LEVEL_CATEGORY_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- CONCENTRATION_CATEGORY ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES40')
+shape: (70493, 40)
+dtype: float32
+long_name: Concentration of objects per category in the slice
+units: #/L
+C_format: %.3f
+FORTRAN_format: F.3
+resolution: 0.0010000000474974513
+
+--- CONCENTRATION_CATEGORY_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- BIOVOLUME_CATEGORY ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES40')
+shape: (70493, 40)
+dtype: float32
+long_name: Biovolume of objects per category in the slice
+units: micrometer^3/ml
+C_format: %.3f
+FORTRAN_format: F.3
+resolution: 0.0010000000474974513
+
+--- BIOVOLUME_CATEGORY_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- ECOTAXA_CATEGORY_ID ---
+dimensions: ('N_MEASUREMENT', 'N_VALUES40')
+shape: (70493, 40)
+dtype: float64
+long_name: Id of the taxonomy category
+C_format: %d
+FORTRAN_format: I
+resolution: 1
+
+--- ECOTAXA_CATEGORY_ID_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- SURFACE_LINEAR_ACCELERATION_COUNT_X ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Linear acceleration at the surface along the X axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- SURFACE_LINEAR_ACCELERATION_COUNT_X_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- SURFACE_LINEAR_ACCELERATION_COUNT_Y ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Linear acceleration at the surface along the Y axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- SURFACE_LINEAR_ACCELERATION_COUNT_Y_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- SURFACE_LINEAR_ACCELERATION_COUNT_Z ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Linear acceleration at the surface along the Z axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- SURFACE_LINEAR_ACCELERATION_COUNT_Z_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- SURFACE_MAGNETIC_FIELD_COUNT_X ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Magnetic field at the surface along the X axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- SURFACE_MAGNETIC_FIELD_COUNT_X_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- SURFACE_MAGNETIC_FIELD_COUNT_Y ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Magnetic field at the surface along the Y axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- SURFACE_MAGNETIC_FIELD_COUNT_Y_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- SURFACE_MAGNETIC_FIELD_COUNT_Z ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: float32
+long_name: Magnetic field at the surface along the Z axis
+units: count
+C_format: %d
+FORTRAN_format: I
+resolution: 1.0
+
+--- SURFACE_MAGNETIC_FIELD_COUNT_Z_QC ---
+dimensions: ('N_MEASUREMENT',)
+shape: (70493,)
+dtype: object
+long_name: quality flag
+conventions: Argo reference table 2
+
+--- CONFIG_MISSION_NUMBER ---
+dimensions: ('N_CYCLE',)
+shape: (38,)
+dtype: float64
+long_name: Unique number denoting the missions performed by the float
+conventions: 1...N, 1 : first complete mission
+
+--- CYCLE_NUMBER_INDEX ---
+dimensions: ('N_CYCLE',)
+shape: (38,)
+dtype: float64
+long_name: Cycle number that corresponds to the current index
+conventions: 0...N, 0 : launch cycle, 1 : first complete cycle
+
+--- CYCLE_NUMBER_INDEX_ADJUSTED ---
+dimensions: ('N_CYCLE',)
+shape: (38,)
+dtype: float64
+long_name: Adjusted cycle number that corresponds to the current index
+conventions: 0...N, 0 : launch cycle, 1 : first complete cycle
+
+--- DATA_MODE ---
+dimensions: ('N_CYCLE',)
+shape: (38,)
+dtype: object
+long_name: Delayed mode or real time data
+conventions: R : real time; D : delayed mode; A : real time with adjustment
+
+--- HISTORY_INSTITUTION ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Institution which performed action
+conventions: Argo reference table 4
+
+--- HISTORY_STEP ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Step in data processing
+conventions: Argo reference table 12
+
+--- HISTORY_SOFTWARE ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Name of software which performed action
+conventions: Institution dependent
+
+--- HISTORY_SOFTWARE_RELEASE ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Version/release of software which performed action
+conventions: Institution dependent
+
+--- HISTORY_REFERENCE ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Reference of database
+conventions: Institution dependent
+
+--- HISTORY_DATE ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Date the history record was created
+conventions: YYYYMMDDHHMISS
+
+--- HISTORY_ACTION ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Action performed on data
+conventions: Argo reference table 7
+
+--- HISTORY_PARAMETER ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Station parameter action is performed on
+conventions: Reference table AUX_3a
+
+--- HISTORY_PREVIOUS_VALUE ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: float64
+long_name: Parameter/Flag previous value before action
+
+--- HISTORY_INDEX_DIMENSION ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Name of dimension to which HISTORY_START_INDEX and HISTORY_STOP_INDEX correspond
+conventions: C: N_CYCLE, M: N_MEASUREMENT
+
+--- HISTORY_START_INDEX ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: float64
+long_name: Start index action applied on
+
+--- HISTORY_STOP_INDEX ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: float64
+long_name: Stop index action applied on
+
+--- HISTORY_QCTEST ---
+dimensions: ('N_HISTORY',)
+shape: (13,)
+dtype: object
+long_name: Documentation of tests performed, tests failed (in hex form)
+conventions: Write tests performed when ACTION=QCP$; tests failed when ACTION=QCF$

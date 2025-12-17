@@ -43,14 +43,14 @@ imu:
       y: +1
       z: +1
 
-gyro:
-  scale: 8.745e-5     # rad/s per count  (ASSUNZIONE TEMPORANEA)
-  units: "rad/s"
+  gyro:
+    scale: 4.745e-4     # rad/s per count  (ASSUNZIONE TEMPORANEA)
+    units: "rad/s"
 
-  bias_counts:
-    x: -59
-    y: -5
-    z: -574
+    bias_counts:
+      x: -59
+      y: -5
+      z: -574
 
   mag:
     # Matlab: MAG_X_phy = MAG_X + mx0 + hi1; MAG_Y_phy = MAG_Y + my0 + hi2; MAG_Z_phy = MAG_Z + mz0
@@ -68,3 +68,8 @@ gyro:
       xy: 0.00052
       yx: -0.00053
       yy: 1.01683
+
+attitude:
+  mode: "safe_tilt_only"   # safe_tilt_only | complementary (poi)
+  dt_max: 300.0            # solo per future fusion
+  alpha: 0.98              # solo per future fusion

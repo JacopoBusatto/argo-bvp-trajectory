@@ -11,12 +11,16 @@ AUX_REQUIRED_VARS = [
     "JULD",
     "PRES",
     "CYCLE_NUMBER",
+    "MEASUREMENT_CODE",  # <-- aggiunto: chiave per fasi/keypoints
+
     "LINEAR_ACCELERATION_COUNT_X",
     "LINEAR_ACCELERATION_COUNT_Y",
     "LINEAR_ACCELERATION_COUNT_Z",
+
     "ANGULAR_RATE_COUNT_X",
     "ANGULAR_RATE_COUNT_Y",
     "ANGULAR_RATE_COUNT_Z",
+
     "MAGNETIC_FIELD_COUNT_X",
     "MAGNETIC_FIELD_COUNT_Y",
     "MAGNETIC_FIELD_COUNT_Z",
@@ -50,6 +54,10 @@ def extract_aux_minimal(ds_aux: xr.Dataset, vars: Optional[Sequence[str]] = None
 
 
 def build_valid_mask(*arrays: np.ndarray) -> np.ndarray:
+    """
+    Valid mask for numeric arrays: finite for all numeric inputs.
+    Non-numeric arrays do not affect the mask.
+    """
     mask = np.ones_like(arrays[0], dtype=bool)
     for a in arrays:
         a = np.asarray(a).reshape(-1)
