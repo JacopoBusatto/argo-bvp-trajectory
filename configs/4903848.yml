@@ -1,0 +1,70 @@
+platform: "4903848"
+
+paths:
+  traj: "C:/Users/Jacopo/CNR/GIOVANNI LA FORGIA - IMU/POLIMNIA/4903848_Rtraj.nc"
+  aux:  "C:/Users/Jacopo/CNR/GIOVANNI LA FORGIA - IMU/POLIMNIA/4903848_Rtraj_aux.nc"
+
+# Argo JULD epoch (non serve cambiarlo normalmente)
+time_reference: "1950-01-01T00:00:00Z"
+
+# usato solo per diagnostica / stima bias in surface, se vuoi
+pres_surface_max: 5.0
+
+imu:
+  frame: "NED"
+  g: 9.80665
+
+  accel:
+    # Matlab: 4*gain*(counts + bias)/65536  -> (in g), poi *g
+    scale_g: 4.0
+    denom: 65536
+
+    # Valori dal tuo Matlab
+    bias_counts:
+      x: 551
+      y: 49
+      z: -699
+
+    gain:
+      x: 1.00297
+      y: 1.00119
+      z: 0.99329
+
+    # mapping assi: output x/y/z <- sorgente X/Y/Z del file
+    # Lasciamo identity finché non fissiamo l’orientazione fisica.
+    axis_map:
+      x: "X"
+      y: "Y"
+      z: "Z"
+
+    # segno assi: utile se scopriamo che un asse è invertito
+    sign:
+      x: +1
+      y: +1
+      z: +1
+
+gyro:
+  scale: 8.745e-5     # rad/s per count  (ASSUNZIONE TEMPORANEA)
+  units: "rad/s"
+
+  bias_counts:
+    x: -59
+    y: -5
+    z: -574
+
+  mag:
+    # Matlab: MAG_X_phy = MAG_X + mx0 + hi1; MAG_Y_phy = MAG_Y + my0 + hi2; MAG_Z_phy = MAG_Z + mz0
+    # nel tuo snippet mx0=my0=mz0=0, quindi qui mettiamo hi1/hi2 su x/y.
+    hard_iron:
+      x: -2027
+      y: -1714
+      z: 0
+
+    # soft-iron su XY come Matlab:
+    # F_PhyMagx = mx*si11 + my*si12
+    # F_PhyMagy = mx*si21 + my*si22
+    soft_iron_xy:
+      xx: 1.00000
+      xy: 0.00052
+      yx: -0.00053
+      yy: 1.01683

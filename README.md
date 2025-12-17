@@ -133,6 +133,133 @@ Small utilities used across tests and examples:
 
 
 ------------------------------------------------------------
+3.4 PREPROCESSING (IMU + Coriolis AUX trajectory)
+------------------------------------------------------------
+
+This repository now includes an IMU preprocessing pipeline to transform
+Coriolis Argo AUX trajectory files into a compact, analysis-ready dataset.
+
+The goal is to:
+- read the CORIOLIS AUX trajectory NetCDF (trajectoryCoriolisAux),
+- extract the IMU channels (accelerometer, gyroscope, magnetometer) and core variables (JULD, PRES, CYCLE),
+- convert raw COUNTS into physical units (m/s^2, rad/s, arbitrary mag units),
+- estimate float attitude (roll, pitch, yaw) in a consistent frame,
+- rotate accelerations into a local navigation frame (NED),
+- remove gravity to obtain linear acceleration in NED.
+
+Frame convention:
+- NED (North-East-Down), with z positive downward (consistent with pressure).
+
+Data source (AUX variables):
+The pipeline targets variables such as:
+- JULD (time), PRES (pressure), CYCLE_NUMBER
+- LINEAR_ACCELERATION_COUNT_X/Y/Z
+- ANGULAR_RATE_COUNT_X/Y/Z
+- MAGNETIC_FIELD_COUNT_X/Y/Z
+(see dsaux_variables.txt for details of available fields). 
+
+Location:
+    src/argobvp/preprocess/
+
+Public API (high level):
+    from argobvp.preprocess import load_config, open_aux
+    from argobvp.preprocess.products import build_preprocessed_dataset
+
+Typical usage:
+
+    cfg = load_config("configs/4903848.yml")
+    ds_aux = open_aux(cfg.paths.aux)
+    ds_pre = build_preprocessed_dataset(ds_aux, cfg)
+
+Output:
+- xarray.Dataset with dimension (obs,) and coordinate time (datetime64[ns])
+- includes pres, cycle_number, attitude angles, and acceleration in both body and NED frames
+
+Key variables produced (subset):
+- pres [dbar], cycle_number
+- roll, pitch, yaw [rad]
+- acc_body_x/y/z [m/s^2]           (calibrated body-frame acceleration)
+- acc_ned_n/e/d [m/s^2]            (body acceleration rotated to NED)
+- acc_lin_ned_n/e/d [m/s^2]        (gravity removed in NED; linear acceleration)
+
+Important note on "gravity included":
+For this platform we treat LINEAR_ACCELERATION_COUNT_* as gravity-included
+(i.e., the dominant offset corresponds to ~1 g), therefore we remove gravity
+after rotating to NED, producing acc_lin_ned_*.
+
+
+------------------------------------------------------------
+3.4.1 Module overview (src/argobvp/preprocess/)
+------------------------------------------------------------
+
+config.py
+- Dataclasses defining the preprocessing configuration (paths + IMU parameters).
+- load_config(path.yml): read YAML into a validated PreprocessConfig.
+
+io_coriolis.py
+- open_aux(path): open CORIOLIS AUX NetCDF (xarray).
+- extract_aux_minimal(ds_aux): pull out a minimal set of arrays used downstream.
+- build_valid_mask(...): consistent finite/valid masking across channels.
+
+imu_calib.py
+- calibrate_accel_counts(...): counts -> g-units -> (later) m/s^2 using cfg.imu.g
+- calibrate_gyro_counts(...): counts -> rad/s (or deg/s) using cfg.imu.gyro.scale
+- calibrate_mag_counts(...): hard/soft-iron style linear corrections (optional)
+
+attitude.py
+- roll_pitch_from_acc_lowpass(...): estimate gravity direction via low-pass accel
+- yaw_from_mag_tilt_comp(...): tilt-compensated yaw from magnetometer
+- complementary_filter_angles(...): minimal fusion:
+    gyro = high-frequency dynamics
+    accel/mag = low-frequency reference
+
+products.py
+- build_preprocessed_dataset(ds_aux, cfg): orchestrates the pipeline and returns
+  the compact xarray.Dataset
+
+
+------------------------------------------------------------
+3.4.2 Configuration (YAML)
+------------------------------------------------------------
+
+No trajectory data is committed to the repository.
+Local absolute paths are used in YAML configs to keep the repo clean.
+
+Example:
+
+platform: "4903848"
+
+paths:
+  aux: "C:/Users/Jacopo/Documents/argo-bvp-trajectory/4903848_Rtraj_aux.nc"
+
+imu:
+  frame: "NED"
+  g: 9.80665
+
+  accel:
+    # Example: bias/gain parameters (platform specific)
+    bias_counts: {x: 551, y: 49, z: -699}
+    gain: {x: 1.00297, y: 1.00119, z: 0.99329}
+
+  gyro:
+    # TEMPORARY: scale can be refined once vendor specs are available
+    scale: 1.745e-4      # rad/s per count
+    units: "rad/s"
+    bias_counts: {x: -59, y: -5, z: -574}
+
+  mag:
+    # Optional magnetometer correction (hard/soft iron)
+    bias_counts: {x: 0, y: 0, z: 0}
+    hard_iron: {hi1: -2027, hi2: -1714}
+    soft_iron: {si11: 1.0, si12: 0.00052, si21: -0.00053, si22: 1.01683}
+
+Tuning notes:
+- gyro.scale too large -> yaw becomes "nervous" (excessive high-frequency jitter)
+- gyro.scale too small -> yaw becomes "molle" (over-smoothed, lagging dynamics)
+- alpha in complementary filter controls the gyro vs accel/mag weighting.
+
+
+------------------------------------------------------------
 4. TEST SUITE (tests/)
 ------------------------------------------------------------
 
