@@ -136,17 +136,205 @@ Small utilities used across tests and examples:
 4. TEST SUITE (tests/)
 ------------------------------------------------------------
 
-Tests are run with pytest and are designed to be:
-- fast
-- deterministic
-- verification-oriented
+The test suite is designed to verify numerical correctness,
+convergence properties, and physical consistency of the implemented methods.
 
-Current tests include:
-- analytical validation with constant acceleration
-- forward/backward integration consistency
-- convergence order vs Δt (Euler / Trapezoid / RK4)
-- Argo-style phase error diagnostics on synthetic cycles
-- BVP shooting correctness in XY
+Tests are written with pytest and are intentionally:
+- deterministic
+- fast (seconds on a laptop)
+- diagnostic rather than exhaustive
+
+They are grouped by conceptual purpose.
+
+
+------------------------------------------------------------
+4.1 Core integrator validation
+------------------------------------------------------------
+
+test_integrators_constant_acc.py
+
+Purpose:
+Validate the second-order integrator against exact analytical solutions
+and verify time-reversal consistency.
+
+What is tested:
+
+- Constant acceleration case:
+    r(t) = r0 + v0 t + 0.5 a t²
+    v(t) = v0 + a t
+
+  RK4 is expected to reproduce the analytical solution to machine precision
+  on a sufficiently fine grid.
+
+- Forward / backward consistency:
+    Integrating forward in time and then backward from the final state
+    should reconstruct the initial state within numerical tolerance
+    (tested with the trapezoidal scheme).
+
+What to expect:
+- RK4 errors ~ 1e-10 or smaller
+- Forward-backward mismatch ≪ 1e-6
+
+
+------------------------------------------------------------
+4.2 Convergence order vs Δt
+------------------------------------------------------------
+
+test_convergence_dt.py
+
+Purpose:
+Verify the formal convergence order of the integration schemes
+using a smooth, time-dependent acceleration with known closed-form solution.
+
+Setup:
+- a(t) = A sin(ω t)
+- exact expressions for v(t) and r(t) are available
+- endpoint error (position + velocity) is evaluated for decreasing Δt
+
+What is measured:
+- endpoint error ∥r(T) − r_true(T)∥ + ∥v(T) − v_true(T)∥
+- convergence slope p in error ~ O(Δt^p)
+
+Expected results:
+- Euler (rectangles / left rule):     p ≈ 1
+- Trapezoid:                          p ≈ 2
+- RK4:                                p ≈ 4 (within tolerance)
+
+This test establishes the numerical order that underpins
+all subsequent error-budget analyses.
+
+
+------------------------------------------------------------
+4.3 Argo-style forward integration diagnostics
+------------------------------------------------------------
+
+test_argo_style_forward_error.py
+
+Purpose:
+Mimic a simplified Argo cycle and quantify forward-integration errors
+at physically meaningful phases.
+
+Setup:
+- Synthetic, smooth XY acceleration field
+- High-resolution RK4 integration used as “truth”
+- Coarser, sampled acceleration integrated forward
+
+Diagnostics:
+- position error at:
+    - end of descent
+    - start of ascent
+    - end of cycle
+
+Assertions:
+- Trapezoid improves over Euler at all phases
+- RK4 is best or comparable (allowing small tolerance due to sampling effects)
+
+This test represents the forward problem encountered when
+integrating IMU-derived accelerations.
+
+
+------------------------------------------------------------
+4.4 Boundary Value Problem (BVP) via shooting
+------------------------------------------------------------
+
+test_bvp_shooting_xy.py
+
+Purpose:
+Validate the BVP solver that reconstructs trajectories
+by shooting on the unknown initial velocity.
+
+Setup:
+- XY motion with known true v0
+- target endpoint r(T) generated via RK4
+- initial guess deliberately wrong
+
+What is tested:
+- convergence of the nonlinear solver (scipy.optimize.root)
+- recovery of the correct final position within tolerance
+
+Assertion:
+- ∥r_xy(T) − rT_xy∥ < 1e−6
+
+This test is the prototype for Argo-cycle BVP reconstruction
+when vertical motion is prescribed independently.
+
+
+------------------------------------------------------------
+4.5 Vertical reconstruction: sampled acceleration (IMU-consistent)
+------------------------------------------------------------
+
+test_z_samples_trapezoid_vs_euler.py
+
+Purpose:
+Test vertical reconstruction when acceleration is treated as
+discrete IMU samples, without any interpolation.
+
+Setup:
+- Argo-like piecewise vertical profile (descent → parking → ascent)
+- acceleration evaluated directly on each integration grid
+- no continuous az(t) assumption
+
+What is tested:
+- trapezoidal integration consistently outperforms Euler
+- errors decrease as Δt decreases
+
+Metrics:
+- max-norm error ∥z_num − z_truth∥∞ on the same grid
+
+This test isolates the effect of numerical quadrature
+(rectangles vs trapezoids) on sampled data.
+
+
+------------------------------------------------------------
+4.6 Vertical reconstruction: phase errors vs Δt
+------------------------------------------------------------
+
+test_z_phase_errors_vs_dt.py
+
+Purpose:
+Quantify vertical reconstruction errors at key Argo phases
+as a function of sampling interval Δt.
+
+Phases considered:
+- end of descent
+- start of ascent
+- end of cycle
+
+Key features:
+- phase times intentionally NOT aligned with grid nodes
+- errors evaluated via time interpolation
+- RMS error aggregated over phases
+
+Assertions:
+- errors increase monotonically with increasing Δt
+- all methods improve with refinement
+- RK4 is not catastrophically worse than Euler
+  (no artificial dominance enforced)
+
+This test provides a robust, physically meaningful
+error-versus-resolution diagnostic.
+
+
+------------------------------------------------------------
+4.7 Pressure-based depth consistency
+------------------------------------------------------------
+
+test_z_sources_piecewise_profile.py
+
+Purpose:
+Validate consistency between pressure-derived depth
+and analytically prescribed z(t).
+
+Setup:
+- z_true(t) converted to pressure p = ρ g z
+- z reconstructed from pressure via hydrostatic relation
+
+Assertion:
+- reconstruction error is at machine precision level
+
+This test establishes pressure-based z as a reliable reference
+for future comparisons with acceleration-based reconstruction.
+
 
 ------------------------------------------------------------
 5. VISUAL EXAMPLES (examples/)
