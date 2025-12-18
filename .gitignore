@@ -1,17 +1,12 @@
-# --- Python / virtualenv ---
-.venv/
+# --- Python / env ---
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
 *.pyd
-
-# --- pytest ---
-.pytest_cache/
-
-# --- build / packaging ---
-build/
-dist/
-*.egg-info/
+*.so
+.venv/
+venv/
+.env/
+.ipynb_checkpoints/
 
 # --- OS / editor ---
 .DS_Store
@@ -19,7 +14,24 @@ Thumbs.db
 .vscode/
 .idea/
 
-# --- logs / outputs ---
-*.log
-*.out
-*.tmp
+# --- Local data (NEVER COMMIT) ---
+*.nc
+*.cdf
+*.netcdf
+*.parquet
+*.pq
+*.zarr/
+*.h5
+*.mat
+
+# --- Outputs ---
+outputs/
+output/
+logs/
+tmp/
+
+# --- Local configs (keep only example templates) ---
+configs/*.local.yml
+configs/*.local.yaml
+configs/*_local.yml
+configs/*_local.yaml

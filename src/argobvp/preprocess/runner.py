@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import argparse
 from typing import Optional
 
 import xarray as xr
@@ -11,7 +12,7 @@ from .io_coriolis import open_aux, open_traj
 from .products import build_preprocessed_dataset
 from .cycles import build_cycle_products
 from .writers import write_netcdf, write_parquet
-
+from .surface_fixes import add_surface_position_from_traj, SurfaceFixConfig
 
 @dataclass(frozen=True)
 class PreprocessOutputs:
@@ -27,23 +28,6 @@ def run_preprocess(
     write_parquet_products: bool = True,
     open_traj_file: bool = False,
 ) -> PreprocessOutputs:
-    """
-    End-to-end preprocessing runner.
-
-    Parameters
-    ----------
-    config_path : path to YAML config.
-    out_dir : output directory.
-    write_parquet_products : if True, write cycles/segments parquet in addition to NetCDF.
-    open_traj_file : if True, open traj file (currently for sanity checks only).
-
-    Outputs
-    -------
-    - preprocessed_imu.nc (continuous, obs-dimension)
-    - cycles.nc (one row per cycle)
-    - segments.nc (one row per contiguous segment inside cycles)
-    - cycles.parquet / segments.parquet (optional)
-    """
     cfg = load_config(config_path)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -59,9 +43,20 @@ def run_preprocess(
     # --- Build continuous IMU product ---
     ds_cont = build_preprocessed_dataset(ds_aux, cfg)
 
-    # --- Build cycle/segment products from continuous (needs measurement_code) ---
+    # --- Build cycle/segment products from continuous ---
     ds_cycles, ds_segments = build_cycle_products(ds_cont, cfg)
 
+    # --- add surface position constraints from traj fixes ---
+    ds_traj = open_traj(cfg.paths.traj)  # già esiste nel runner se vuoi aprirlo sempre
+    ds_cycles = add_surface_position_from_traj(
+        ds_cycles,
+        ds_traj,
+        cfg=SurfaceFixConfig(
+            max_gap_seconds=3*24*3600,
+            max_abs_dt_nearest_seconds=6*3600,
+        ),
+    )
+    
     # --- Write outputs ---
     p_cont = out_dir / f"{cfg.platform}_preprocessed_imu.nc"
     p_cycles_nc = out_dir / f"{cfg.platform}_cycles.nc"
@@ -77,7 +72,7 @@ def run_preprocess(
         write_parquet(ds_cycles, p_cycles_pq)
         write_parquet(ds_segments, p_segments_pq)
 
-    # Close opened datasets if they are lazy-backed by files
+    # close datasets
     try:
         ds_aux.close()
     except Exception:
@@ -88,8 +83,28 @@ def run_preprocess(
         except Exception:
             pass
 
-    return PreprocessOutputs(
-        ds_continuous=ds_cont,
-        ds_cycles=ds_cycles,
-        ds_segments=ds_segments,
+    return PreprocessOutputs(ds_continuous=ds_cont, ds_cycles=ds_cycles, ds_segments=ds_segments)
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="ArgoBVP preprocess runner (AUX -> continuous + cycles + segments).")
+    p.add_argument("--config", required=True, help="Path to YAML config (e.g. configs/4903848.yml)")
+    p.add_argument("--out", required=True, help="Output directory (e.g. outputs/preprocess)")
+    p.add_argument("--no-parquet", action="store_true", help="Do not write parquet products.")
+    p.add_argument("--open-traj", action="store_true", help="Also open traj file (sanity check only).")
+    return p
+
+
+def main():
+    args = _build_parser().parse_args()
+    run_preprocess(
+        config_path=args.config,
+        out_dir=args.out,
+        write_parquet_products=not args.no_parquet,
+        open_traj_file=args.open_traj,
     )
+    print("OK: wrote outputs to", args.out)
+
+
+if __name__ == "__main__":
+    main()
