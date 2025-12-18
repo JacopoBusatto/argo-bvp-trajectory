@@ -113,8 +113,8 @@ def build_bvp_ready_dataset(
     )
     _require_vars(ds_segments, ["cycle_number", "idx0", "idx1", "is_parking_phase", "t0", "t1"], "ds_segments")
 
-    # Filter valid cycles
-    valid_mask = np.asarray(ds_cycles["valid_for_bvp"].values).astype(bool)
+    # Filter valid cycles (keep xarray mask to preserve coords)
+    valid_mask = ds_cycles["valid_for_bvp"].astype(bool)
     ds_cyc_valid = ds_cycles.where(valid_mask, drop=True)
     cycle_numbers = np.asarray(ds_cyc_valid["cycle_number"].values).astype(int)
 
