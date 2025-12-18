@@ -5,51 +5,56 @@ This repository contains a small, self-consistent numerical framework to:
 1) integrate Argo-like trajectories from acceleration (second-order kinematics), and
 2) solve a simple boundary-value constraint (BVP) by “shooting” on the unknown initial velocity.
 
-The final scientific objective is to quantify the positional error at key Argo phases
-(end of descent, start of ascent) with respect to surface GPS fixes at the start/end of a cycle.
+The scientific objective is to reconstruct and quantify positional uncertainty at key Argo phases
+(e.g., start of ascent, end of surface window), using IMU-derived acceleration and surface position fixes.
 
-The project is intentionally built step by step, with strong emphasis on:
+The project is built step-by-step with emphasis on:
 - numerical correctness
 - reproducibility
-- verification through analytical and synthetic test cases
+- diagnostic tooling (debug scripts + synthetic tests)
+- a clean preprocessing pipeline from Coriolis NetCDF to analysis-ready products
 
 
 ------------------------------------------------------------
 1. PROJECT STRUCTURE
 ------------------------------------------------------------
 
-The repository follows a standard "src-layout" Python structure:
+Standard "src-layout" structure:
 
-```html
+```
 argo-bvp-trajectory/
 ├── src/
 │   └── argobvp/
 │       ├── __init__.py
 │       ├── integrators.py
 │       ├── bvp.py
-│       └── metrics.py
+│       ├── metrics.py
+│       └── preprocess/
+│           ├── __init__.py
+│           ├── config.py
+│           ├── io_coriolis.py
+│           ├── imu_calib.py
+│           ├── attitude.py
+│           ├── products.py
+│           ├── cycles.py
+│           ├── surface_fixes.py
+│           ├── writers.py
+│           ├── runner.py
+│           ├── debug_phases.py
+│           ├── debug_surface_fixes.py
+│           └── check_traj_surface_fix.py
 │
 ├── tests/
-│   └── test_*.py
-│
 ├── examples/
-│   ├── convergence_visual.py
-│   ├── bvp_shooting_visual.py
-│   └── argo_toy_visual.py
-│
+├── configs/
+├── outputs/               (ignored by git)
 ├── pyproject.toml
 ├── .gitignore
 └── README.md
 ```
 
-Public API is re-exported in `argobvp/__init__.py`:
-- integrate_2nd_order, IntegratorMethod
-- endpoint_error, point_error_at_time, nearest_index
-(see src/argobvp/__init__.py). :contentReference[oaicite:3]{index=3}
-
-
 ------------------------------------------------------------
-2. NUMERICAL MODEL
+2. NUMERICAL MODEL (core)
 ------------------------------------------------------------
 
 We integrate second-order kinematics:
@@ -57,13 +62,9 @@ We integrate second-order kinematics:
     dr/dt = v
     dv/dt = a(t, r, v)
 
-where:
-- r(t) is the position vector (x, y, z)
-- v(t) is the velocity vector
-- a(t, r, v) is a prescribed acceleration model
-
-This is implemented as a discrete-time integrator on an arbitrary time grid `t`
-(assumed strictly increasing).
+The integration is implemented on an arbitrary time grid t (strictly increasing).
+We also provide a simple BVP solver via shooting on the unknown initial velocity v0,
+typically in the horizontal plane (XY).
 
 
 ------------------------------------------------------------
@@ -71,469 +72,155 @@ This is implemented as a discrete-time integrator on an arbitrary time grid `t`
 ------------------------------------------------------------
 
 3.1 integrators.py
-------------------
-
-Main function:
-
-    integrate_2nd_order(t, r0, v0, a_fun, method="trapezoid", backward=False)
-
-It integrates the system on a given time grid `t`.
-Supported integration schemes (IntegratorMethod):
-
-- EULER
-  Explicit Euler (rectangle/left rule). First-order accurate.
-  (Update v with a(t_i), update r with v(t_i)). :contentReference[oaicite:4]{index=4}
-
-- TRAPEZOID
-  Predictor-corrector trapezoid on v, and trapezoid on r using average velocity.
-  Second-order accurate in time; the main reference for Argo-like workflows. :contentReference[oaicite:5]{index=5}
-
-- RK4
-  Classical 4th-order Runge–Kutta for the coupled (r,v) system; used as benchmark. 
-
-Backward integration:
-If `backward=True`, the code reverses the time grid internally, integrates,
-then flips the output so arrays are returned aligned with the original (increasing) `t`. 
-
+- integrate_2nd_order(t, r0, v0, a_fun, method="trapezoid", backward=False)
+Supported schemes:
+- Euler (1st order)
+- Trapezoid (2nd order; default reference)
+- RK4 (high-accuracy benchmark)
 
 3.2 bvp.py
-----------
-
-This module relies on `scipy.optimize.root` for the nonlinear solve,
-therefore SciPy is required.
-
-Implements a simple Boundary Value constraint on position via “shooting” on v0.
-
-Main function:
-
-    shoot_v0_to_hit_rT(t, r0, rT_target, v0_guess, a_fun, method="trapezoid", dims=(0,1))
-
-Goal:
-Choose the components v0[dims] so that the integrated endpoint matches the target:
-
-    r(T)[dims] = rT_target[dims]
-
-Implementation:
-- Define a residual F(v0[dims]) = r(T)[dims] - rT_target[dims]
-- Solve F(x)=0 using `scipy.optimize.root` (hybr). :contentReference[oaicite:8]{index=8}
-- Return the optimized v0 and the reconstructed (r(t), v(t)) trajectory.
-
-This is the prototype of an Argo-cycle BVP:
-for example with prescribed z-profile, we typically shoot only on XY (dims=(0,1)). :contentReference[oaicite:9]{index=9}
-
+- shoot_v0_to_hit_rT(...): solve r(T)[dims] = rT_target[dims] by shooting on v0[dims]
 
 3.3 metrics.py
---------------
-
-Small utilities used across tests and examples:
-
-- nearest_index(t, t_query): nearest time index :contentReference[oaicite:10]{index=10}
-- endpoint_error(r, r_target): ||r(T) - r_target|| :contentReference[oaicite:11]{index=11}
-- point_error_at_time(t, r, t_query, r_target): ||r(t_query) - r_target|| :contentReference[oaicite:12]{index=12}
+- nearest_index, endpoint_error, point_error_at_time, ...
 
 
 ------------------------------------------------------------
-3.4 PREPROCESSING (IMU + Coriolis AUX trajectory)
+4. PREPROCESSING PIPELINE (Coriolis AUX + TRAJ)
 ------------------------------------------------------------
 
-This repository now includes an IMU preprocessing pipeline to transform
-Coriolis Argo AUX trajectory files into a compact, analysis-ready dataset.
+Goal:
+Transform Coriolis Argo NetCDF files into compact, analysis-ready products:
+- a continuous IMU dataset (time series),
+- cycle-level keypoints,
+- segment-level phase labels,
+- surface position constraints from TRAJ fixes.
 
-The goal is to:
-- read the CORIOLIS AUX trajectory NetCDF (trajectoryCoriolisAux),
-- extract the IMU channels (accelerometer, gyroscope, magnetometer) and core variables (JULD, PRES, CYCLE),
-- convert raw COUNTS into physical units (m/s^2, rad/s, arbitrary mag units),
-- estimate float attitude (roll, pitch, yaw) in a consistent frame,
-- rotate accelerations into a local navigation frame (NED),
-- remove gravity to obtain linear acceleration in NED.
+Inputs:
+- AUX trajectory NetCDF (IMU channels + pressure + time + cycle)
+- TRAJ NetCDF (surface fixes / positions + per-cycle timing metadata)
+
+Configuration:
+YAML configs live in `configs/` and define:
+- input paths (traj + aux)
+- IMU calibration parameters (bias/gain/scale)
+- attitude mode parameters
+
+Important:
+- raw data files are NOT committed to git
+- outputs/ is NOT committed to git
+
+
+------------------------------------------------------------
+4.1 Main runner
+------------------------------------------------------------
+
+Run the full preprocessing:
+
+    python -m argobvp.preprocess.runner --config configs/4903848.yml --out outputs/preprocess
+
+This produces:
+- outputs/preprocess/<platform>_preprocessed_imu.nc
+- outputs/preprocess/<platform>_cycles.nc
+- outputs/preprocess/<platform>_segments.nc
+and optionally parquet mirrors:
+- outputs/preprocess/<platform>_cycles.parquet
+- outputs/preprocess/<platform>_segments.parquet
+
+
+------------------------------------------------------------
+4.2 Continuous IMU product (ds_cont)
+------------------------------------------------------------
+
+Produced by:
+- build_preprocessed_dataset(ds_aux, cfg)
+
+Includes (subset, evolving):
+- time coordinate (datetime64[ns])
+- cycle_number
+- pres (dbar)
+- calibrated accelerometer channels (m/s^2)
+- calibrated gyro channels (rad/s) [NOTE: scale may be provisional]
+- magnetometer channels (corrected if configured)
+- estimated attitude angles (roll/pitch/yaw depending on mode)
+- accelerations rotated to a navigation frame (NED)
+- optional gravity removal to obtain linear acceleration in NED
 
 Frame convention:
-- NED (North-East-Down), with z positive downward (consistent with pressure).
-
-Data source (AUX variables):
-The pipeline targets variables such as:
-- JULD (time), PRES (pressure), CYCLE_NUMBER
-- LINEAR_ACCELERATION_COUNT_X/Y/Z
-- ANGULAR_RATE_COUNT_X/Y/Z
-- MAGNETIC_FIELD_COUNT_X/Y/Z
-(see dsaux_variables.txt for details of available fields). 
-
-Location:
-    src/argobvp/preprocess/
-
-Public API (high level):
-    from argobvp.preprocess import load_config, open_aux
-    from argobvp.preprocess.products import build_preprocessed_dataset
-
-Typical usage:
-
-    cfg = load_config("configs/4903848.yml")
-    ds_aux = open_aux(cfg.paths.aux)
-    ds_pre = build_preprocessed_dataset(ds_aux, cfg)
-
-Output:
-- xarray.Dataset with dimension (obs,) and coordinate time (datetime64[ns])
-- includes pres, cycle_number, attitude angles, and acceleration in both body and NED frames
-
-Key variables produced (subset):
-- pres [dbar], cycle_number
-- roll, pitch, yaw [rad]
-- acc_body_x/y/z [m/s^2]           (calibrated body-frame acceleration)
-- acc_ned_n/e/d [m/s^2]            (body acceleration rotated to NED)
-- acc_lin_ned_n/e/d [m/s^2]        (gravity removed in NED; linear acceleration)
-
-Important note on "gravity included":
-For this platform we treat LINEAR_ACCELERATION_COUNT_* as gravity-included
-(i.e., the dominant offset corresponds to ~1 g), therefore we remove gravity
-after rotating to NED, producing acc_lin_ned_*.
+- NED (North-East-Down), z positive downward (consistent with pressure).
 
 
 ------------------------------------------------------------
-3.4.1 Module overview (src/argobvp/preprocess/)
+4.3 Cycle and segment products (ds_cycles, ds_segments)
 ------------------------------------------------------------
 
-config.py
-- Dataclasses defining the preprocessing configuration (paths + IMU parameters).
-- load_config(path.yml): read YAML into a validated PreprocessConfig.
+Built from the continuous dataset:
+- build_cycle_products(ds_cont, cfg)
 
-io_coriolis.py
-- open_aux(path): open CORIOLIS AUX NetCDF (xarray).
-- extract_aux_minimal(ds_aux): pull out a minimal set of arrays used downstream.
-- build_valid_mask(...): consistent finite/valid masking across channels.
+ds_cycles contains, for each cycle:
+- t_cycle_start
+- t_park_start
+- t_profile_deepest
+- t_ascent_start
+- t_surface_start
+- t_surface_end
+- representative pressures (park and deepest)
 
-imu_calib.py
-- calibrate_accel_counts(...): counts -> g-units -> (later) m/s^2 using cfg.imu.g
-- calibrate_gyro_counts(...): counts -> rad/s (or deg/s) using cfg.imu.gyro.scale
-- calibrate_mag_counts(...): hard/soft-iron style linear corrections (optional)
+ds_segments contains contiguous segments per cycle:
+- cycle_number
+- segment_name (e.g. park_drift, ascent, ...)
+- idx0, idx1 (index bounds in the continuous dataset)
+- t0, t1
 
-attitude.py
-- roll_pitch_from_acc_lowpass(...): estimate gravity direction via low-pass accel
-- yaw_from_mag_tilt_comp(...): tilt-compensated yaw from magnetometer
-- complementary_filter_angles(...): minimal fusion:
-    gyro = high-frequency dynamics
-    accel/mag = low-frequency reference
-
-products.py
-- build_preprocessed_dataset(ds_aux, cfg): orchestrates the pipeline and returns
-  the compact xarray.Dataset
+Note:
+Phase detection depends on what is available in the dataset (e.g. MEASUREMENT_CODE)
+and may produce only a subset of phases for some platforms.
 
 
 ------------------------------------------------------------
-3.4.2 Configuration (YAML)
+4.4 Surface position constraints from TRAJ fixes
 ------------------------------------------------------------
 
-No trajectory data is committed to the repository.
-Local absolute paths are used in YAML configs to keep the repo clean.
+The runner can add a surface position constraint to ds_cycles:
+- add_surface_position_from_traj(ds_cycles, ds_traj, ...)
 
-Example:
+For each cycle, we associate a lat/lon position to t_surface_end using TRAJ fixes,
+with robust guards:
+- prefer interpolation only if surrounding fixes are sufficiently close in time
+- otherwise fallback to the nearest fix
+- store diagnostics such as pos_age_s and the actual time used
 
-platform: "4903848"
-
-paths:
-  aux: "C:/Users/Jacopo/Documents/argo-bvp-trajectory/4903848_Rtraj_aux.nc"
-
-imu:
-  frame: "NED"
-  g: 9.80665
-
-  accel:
-    # Example: bias/gain parameters (platform specific)
-    bias_counts: {x: 551, y: 49, z: -699}
-    gain: {x: 1.00297, y: 1.00119, z: 0.99329}
-
-  gyro:
-    # TEMPORARY: scale can be refined once vendor specs are available
-    scale: 1.745e-4      # rad/s per count
-    units: "rad/s"
-    bias_counts: {x: -59, y: -5, z: -574}
-
-  mag:
-    # Optional magnetometer correction (hard/soft iron)
-    bias_counts: {x: 0, y: 0, z: 0}
-    hard_iron: {hi1: -2027, hi2: -1714}
-    soft_iron: {si11: 1.0, si12: 0.00052, si21: -0.00053, si22: 1.01683}
-
-Tuning notes:
-- gyro.scale too large -> yaw becomes "nervous" (excessive high-frequency jitter)
-- gyro.scale too small -> yaw becomes "molle" (over-smoothed, lagging dynamics)
-- alpha in complementary filter controls the gyro vs accel/mag weighting.
+In the current dataset, fixes often occur ~20 minutes after t_surface_end,
+so the typical mode is nearest-fix with pos_age_s ~ 1100–1200 s.
 
 
 ------------------------------------------------------------
-4. TEST SUITE (tests/)
+5. DEBUG SCRIPTS
 ------------------------------------------------------------
 
-The test suite is designed to verify numerical correctness,
-convergence properties, and physical consistency of the implemented methods.
+Inspect phase segmentation and cycle keypoints:
 
-Tests are written with pytest and are intentionally:
-- deterministic
-- fast (seconds on a laptop)
-- diagnostic rather than exhaustive
+    python -m argobvp.preprocess.debug_phases
 
-They are grouped by conceptual purpose.
+Inspect surface-fix association summary:
 
+    python -m argobvp.preprocess.debug_surface_fixes
 
-------------------------------------------------------------
-4.1 Core integrator validation
-------------------------------------------------------------
+Check TRAJ fix sampling (basic sanity):
 
-test_integrators_constant_acc.py
-
-Purpose:
-Validate the second-order integrator against exact analytical solutions
-and verify time-reversal consistency.
-
-What is tested:
-
-- Constant acceleration case:
-    r(t) = r0 + v0 t + 0.5 a t²
-    v(t) = v0 + a t
-
-  RK4 is expected to reproduce the analytical solution to machine precision
-  on a sufficiently fine grid.
-
-- Forward / backward consistency:
-    Integrating forward in time and then backward from the final state
-    should reconstruct the initial state within numerical tolerance
-    (tested with the trapezoidal scheme).
-
-What to expect:
-- RK4 errors ~ 1e-10 or smaller
-- Forward-backward mismatch ≪ 1e-6
+    python -m argobvp.preprocess.check_traj_surface_fix
 
 
 ------------------------------------------------------------
-4.2 Convergence order vs Δt
+6. INSTALLATION
 ------------------------------------------------------------
 
-test_convergence_dt.py
-
-Purpose:
-Verify the formal convergence order of the integration schemes
-using a smooth, time-dependent acceleration with known closed-form solution.
-
-Setup:
-- a(t) = A sin(ω t)
-- exact expressions for v(t) and r(t) are available
-- endpoint error (position + velocity) is evaluated for decreasing Δt
-
-What is measured:
-- endpoint error ∥r(T) − r_true(T)∥ + ∥v(T) − v_true(T)∥
-- convergence slope p in error ~ O(Δt^p)
-
-Expected results:
-- Euler (rectangles / left rule):     p ≈ 1
-- Trapezoid:                          p ≈ 2
-- RK4:                                p ≈ 4 (within tolerance)
-
-This test establishes the numerical order that underpins
-all subsequent error-budget analyses.
-
-
-------------------------------------------------------------
-4.3 Argo-style forward integration diagnostics
-------------------------------------------------------------
-
-test_argo_style_forward_error.py
-
-Purpose:
-Mimic a simplified Argo cycle and quantify forward-integration errors
-at physically meaningful phases.
-
-Setup:
-- Synthetic, smooth XY acceleration field
-- High-resolution RK4 integration used as “truth”
-- Coarser, sampled acceleration integrated forward
-
-Diagnostics:
-- position error at:
-    - end of descent
-    - start of ascent
-    - end of cycle
-
-Assertions:
-- Trapezoid improves over Euler at all phases
-- RK4 is best or comparable (allowing small tolerance due to sampling effects)
-
-This test represents the forward problem encountered when
-integrating IMU-derived accelerations.
-
-
-------------------------------------------------------------
-4.4 Boundary Value Problem (BVP) via shooting
-------------------------------------------------------------
-
-test_bvp_shooting_xy.py
-
-Purpose:
-Validate the BVP solver that reconstructs trajectories
-by shooting on the unknown initial velocity.
-
-Setup:
-- XY motion with known true v0
-- target endpoint r(T) generated via RK4
-- initial guess deliberately wrong
-
-What is tested:
-- convergence of the nonlinear solver (scipy.optimize.root)
-- recovery of the correct final position within tolerance
-
-Assertion:
-- ∥r_xy(T) − rT_xy∥ < 1e−6
-
-This test is the prototype for Argo-cycle BVP reconstruction
-when vertical motion is prescribed independently.
-
-
-------------------------------------------------------------
-4.5 Vertical reconstruction: sampled acceleration (IMU-consistent)
-------------------------------------------------------------
-
-test_z_samples_trapezoid_vs_euler.py
-
-Purpose:
-Test vertical reconstruction when acceleration is treated as
-discrete IMU samples, without any interpolation.
-
-Setup:
-- Argo-like piecewise vertical profile (descent → parking → ascent)
-- acceleration evaluated directly on each integration grid
-- no continuous az(t) assumption
-
-What is tested:
-- trapezoidal integration consistently outperforms Euler
-- errors decrease as Δt decreases
-
-Metrics:
-- max-norm error ∥z_num − z_truth∥∞ on the same grid
-
-This test isolates the effect of numerical quadrature
-(rectangles vs trapezoids) on sampled data.
-
-
-------------------------------------------------------------
-4.6 Vertical reconstruction: phase errors vs Δt
-------------------------------------------------------------
-
-test_z_phase_errors_vs_dt.py
-
-Purpose:
-Quantify vertical reconstruction errors at key Argo phases
-as a function of sampling interval Δt.
-
-Phases considered:
-- end of descent
-- start of ascent
-- end of cycle
-
-Key features:
-- phase times intentionally NOT aligned with grid nodes
-- errors evaluated via time interpolation
-- RMS error aggregated over phases
-
-Assertions:
-- errors increase monotonically with increasing Δt
-- all methods improve with refinement
-- RK4 is not catastrophically worse than Euler
-  (no artificial dominance enforced)
-
-This test provides a robust, physically meaningful
-error-versus-resolution diagnostic.
-
-
-------------------------------------------------------------
-4.7 Pressure-based depth consistency
-------------------------------------------------------------
-
-test_z_sources_piecewise_profile.py
-
-Purpose:
-Validate consistency between pressure-derived depth
-and analytically prescribed z(t).
-
-Setup:
-- z_true(t) converted to pressure p = ρ g z
-- z reconstructed from pressure via hydrostatic relation
-
-Assertion:
-- reconstruction error is at machine precision level
-
-This test establishes pressure-based z as a reliable reference
-for future comparisons with acceleration-based reconstruction.
-
-
-------------------------------------------------------------
-5. VISUAL EXAMPLES (examples/)
-------------------------------------------------------------
-
-These scripts are for interactive inspection and intuition-building.
-They are NOT part of the automated test suite.
-
-5.1 examples/convergence_visual.py
-----------------------------------
-
-Purpose:
-Show convergence with Δt → 0 and compare integrators (rectangles vs trapezoid vs RK4).
-
-What it does:
-- Uses a smooth acceleration a(t) = A sin(ω t)
-- Computes an endpoint error (position + velocity mismatch) for a sequence of dt values
-- Produces a log-log plot and prints fitted slopes p in error ~ O(dt^p). :contentReference[oaicite:13]{index=13}
-
-Run:
-
-    python examples/convergence_visual.py
-
-
-5.2 examples/bvp_shooting_visual.py
------------------------------------
-
-Purpose:
-Demonstrate a BVP in XY solved by shooting on v0_xy.
-
-High-level workflow:
-1) Define a “truth” XY curve (drift + low-frequency meander + high-frequency oscillation)
-2) Build a consistent analytic acceleration a_true(t) (second derivative of the truth)
-3) Generate a target endpoint rT_target using a fine RK4 “truth integration”
-4) On a coarser grid, solve for v0_xy such that r(T) matches rT_target (for each integrator)
-5) Plot:
-   - XY trajectories (truth vs reconstructed)
-   - reconstruction error ||r_xy - r*_xy|| over time
-   - cost surface J(v0x,v0y) = ||r_xy(T; v0) - rT_xy|| 
-
-Run:
-
-    python examples/bvp_shooting_visual.py
-
-
-5.3 examples/argo_toy_visual.py
--------------------------------
-
-Purpose:
-A “toy Argo” visual demo that bundles:
-- the same non-degenerate XY truth family,
-- shooting on v0_xy,
-- and a cost-surface visualization implemented as a helper function `cost_surface(...)`. 
-
-Run:
-
-    python examples/argo_toy_visual.py
-
-
-------------------------------------------------------------
-6. INSTALLATION & ENVIRONMENT
-------------------------------------------------------------
-
-Python requirement:
-- Python 3.10 or 3.11 (see `pyproject.toml`)
-
-Create and activate venv (Windows PowerShell):
+Create venv (Windows PowerShell):
 
     py -m venv .venv
     .venv\Scripts\activate
 
-Install the project (editable) + development tools:
+Install editable + dev tools:
 
     pip install -e ".[dev]"
 
@@ -541,265 +228,35 @@ Run tests:
 
     pytest -q
 
-Run examples:
 
-    python examples/convergence_visual.py
-    python examples/bvp_shooting_visual.py
-    python examples/argo_toy_visual.py
+------------------------------------------------------------
+7. CURRENT LIMITATIONS / NOTES
+------------------------------------------------------------
+
+- Gyro scale:
+  `imu.gyro.scale` may be provisional if the exact count-to-rate conversion is unknown.
+  Attitude estimation modes are designed to remain usable under this uncertainty.
+
+- Phase coverage:
+  Some datasets may provide only a subset of phases (e.g. park_drift + ascent)
+  depending on what is present/encoded in MEASUREMENT_CODE and timing variables.
+
+- Surface fixes:
+  Surface position constraints may occur after the end of the surface window.
+  The pipeline stores pos_age_s to make this explicit and usable in later BVP constraints.
 
 
 ------------------------------------------------------------
-7. DESIGN CHOICES (WHY THESE METHODS?)
+8. ROADMAP (next steps)
 ------------------------------------------------------------
 
-- Euler is included as the simplest baseline (“rectangles / left rule”) and to show first-order behavior.
-- Trapezoid is the default reference because it is:
-  - simple,
-  - robust,
-  - second-order accurate,
-  - a natural “next step” from rectangles for Argo-like discrete sampling.
-- RK4 is included primarily as a high-accuracy benchmark to define “truth” trajectories.
-
-------------------------------------------------------------
-8. VERTICAL INTEGRATION MODES (z-dynamics)
-------------------------------------------------------------
-
-Two distinct integration modes are provided on purpose.
-
-They correspond to two different physical assumptions:
-
-- sampled mode: integrate exactly what the IMU measures (discrete az samples)
-- continuous mode: integrate a reconstructed continuous az(t)
-
-The two modes solve different problems and should not be mixed.
-
-In this project, the vertical coordinate z (positive downward)
-can be reconstructed using different assumptions on the available data
-and on the physical meaning of the acceleration signal.
-
-This is particularly important for Argo floats equipped with IMU
-(accelerometer + gyroscope), where vertical motion can be inferred
-both from pressure measurements and from vertical acceleration.
-
-
-------------------------------------------------------------
-8.1 Sampled acceleration integration (IMU-consistent)
-------------------------------------------------------------
-
-Function:
-    integrate_z_from_accel_samples(...)
-
-Location:
-    src/argobvp/z_sources.py
-
-This function integrates the vertical motion assuming that the vertical
-acceleration az is available as *discrete samples* at times t[k],
-as provided by an IMU.
-
-The governing equations are:
-
-    dz/dt  = vz
-    dvz/dt = az(t)
-
-but az(t) is assumed to be known only at the sampling instants.
-
-Supported numerical schemes:
-
-- Euler (rectangle rule):
-      vz[k+1] = vz[k] + dt * az[k]
-      z[k+1]  = z[k]  + dt * vz[k]
-
-- Trapezoid:
-      vz[k+1] = vz[k] + dt * (az[k] + az[k+1]) / 2
-      z[k+1]  = z[k]  + dt * (vz[k] + vz[k+1]) / 2
-
-Important properties:
-
-- No interpolation of az is performed.
-- The method operates directly on sampled data.
-- This is the most appropriate approach when az comes from IMU measurements.
-- The comparison between Euler and Trapezoid is clean and reproducible,
-  since it reflects only the numerical quadrature choice.
-
-Limitations:
-
-- RK4 is intentionally NOT supported in this mode, because it requires
-  evaluating az at intermediate times, which is not defined for purely
-  sampled signals.
-
-This mode is therefore the recommended default for Argo-like IMU data.
-
-
-------------------------------------------------------------
-8.2 Continuous acceleration integration (model-based)
-------------------------------------------------------------
-
-Function:
-    integrate_z_from_accel(...)
-
-Location:
-    src/argobvp/z_sources.py
-
-In this mode, the sampled acceleration az is implicitly promoted to a
-continuous function az(t) via interpolation.
-
-The vertical ODE system is then integrated assuming that az(t) can be
-evaluated at arbitrary times, including intermediate stages of the
-integration scheme.
-
-Supported numerical schemes include:
-
-- Euler
-- Trapezoid
-- RK4
-
-Important characteristics:
-
-- The numerical result depends both on the integration scheme AND on
-  the chosen interpolation model for az(t).
-- This mode is suitable when az(t) represents a reconstructed or modeled
-  continuous signal (e.g. filtered IMU data, spline reconstruction,
-  or analytical forcing in synthetic tests).
-- RK4 can be used as a high-accuracy benchmark under these assumptions.
-
-Caveat:
-
-- Comparisons between Euler, Trapezoid, and RK4 in this mode do NOT isolate
-  the effect of the integration scheme alone, since the interpolation of
-  az(t) plays a central role.
-- In particular, Euler may occasionally outperform Trapezoid on specific
-  metrics due to cancellation effects or interpolation artifacts.
-
-For this reason, this mode is mainly used for:
-- synthetic benchmarks
-- sensitivity experiments
-- comparison against analytical solutions
-
-Key conceptual difference:
-
-- integrate_z_from_accel_samples integrates discrete data:
-      "What does the IMU actually measure?"
-
-- integrate_z_from_accel integrates a continuous model:
-      "What would the trajectory be if az(t) were a smooth function?"
-
-Both are correct, but they answer different questions.
-
-
-------------------------------------------------------------
-8.3 Relation to pressure-based depth
-------------------------------------------------------------
-
-In real Argo datasets, depth (or pressure) provides an independent
-measurement of z(t).
-
-The framework is designed so that:
-
-- z(t) reconstructed from acceleration can be directly compared to
-  z(t) derived from pressure.
-- Tests can be constructed to quantify the error introduced by:
-    - numerical integration
-    - acceleration sampling
-    - bias or noise in az
-
-Future developments will allow:
-- switching between pressure-based z and acceleration-based z
-- using pressure-derived z as a constraint in boundary value problems
-  for trajectory reconstruction
-
-
-------------------------------------------------------------
-8.4 Recommended usage summary
-------------------------------------------------------------
-
-For real Argo IMU data:
-    → use integrate_z_from_accel_samples
-
-For synthetic tests or continuous forcing models:
-    → use integrate_z_from_accel
-
-For method-comparison tests (Euler vs Trapezoid):
-    → always use sampled mode
-
-For high-accuracy reference solutions:
-    → use RK4 in continuous mode
-
-This separation ensures numerical clarity, reproducibility,
-and physical interpretability of the results.
-
-------------------------------------------------------------
-9. ROADMAP / NEXT STEPS
-------------------------------------------------------------
-
-Planned next steps (already discussed in the project):
-
-1) Prescribed z-profile variant:
-   - solve only for XY while z(t) is prescribed by an Argo-like depth profile.
-
-2) Longer convergence tests:
-   - error vs Δt curves specifically at key phases (end-of-descent / start-of-ascent / final)
-
-3) Real Argo integration:
-   - given measured a(t) (or reconstructed), forward-integrate and quantify endpoint/phase errors
-     relative to surface GPS positions.
-
-This document will evolve together with the code.
-
-------------------------------------------------------------
-10. Vertical integration tests
-------------------------------------------------------------
-
-Specific tests are included to validate vertical (z) reconstruction
-under Argo-like conditions.
-
-These tests focus on physically meaningful diagnostics rather than
-formal numerical order only.
-
-Main vertical tests include:
-
-- test_z_from_accel_samples.py
-    Verifies vertical reconstruction when az is treated as sampled IMU data.
-    Demonstrates that trapezoidal integration outperforms Euler
-    in a robust, sampling-consistent setting.
-
-- test_z_phase_errors_vs_dt.py
-    Quantifies vertical reconstruction errors at key Argo phases:
-        - end of descent
-        - start of ascent
-        - end of cycle
-    as a function of the sampling interval Δt.
-
-    Errors are evaluated using time interpolation to avoid
-    grid-alignment artefacts.
-
-These tests are designed to be:
-- robust to phase-node alignment,
-- representative of real Argo sampling,
-- suitable for uncertainty budgeting.
-
-------------------------------------------------------------
-11. Vertical reconstruction examples
-------------------------------------------------------------
-
-Additional visual scripts focus on vertical (z) dynamics.
-
-- examples/z_phase_errors_visual.py
-
-Purpose:
-Visualize how vertical reconstruction errors depend on:
-- integration method,
-- sampling interval Δt,
-- Argo phase (descent end, ascent start, final).
-
-The script shows:
-- reconstructed z(t) vs analytic reference,
-- absolute error |z - z_truth| over time,
-- phase errors vs Δt (log-log),
-- separation between Euler, Trapezoid, and RK4 in appropriate regimes.
-
-The example highlights the difference between:
-- sampled-data integration (IMU-consistent),
-- continuous-forcing integration (benchmark).
-
-These scripts are meant for diagnostic exploration and
-scientific interpretation, not for automated validation.
+1) Improve phase reconstruction:
+   - use TRAJ timing variables (JULD_* per cycle) as a phase backbone
+   - derive missing phases even when IMU samples are absent in that window
+
+2) Add time-alignment diagnostics:
+   - verify keypoints fall within the continuous IMU time range per cycle
+
+3) Integrate trajectories and compute keypoint errors:
+   - forward integration from IMU acceleration
+   - BVP shooting in XY using surface constraints
