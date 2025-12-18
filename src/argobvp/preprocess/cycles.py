@@ -206,9 +206,13 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
     t_ascent_start: List[np.datetime64] = []
     t_surface_start: List[np.datetime64] = []
     t_surface_end: List[np.datetime64] = []
+    t_park_end: List[np.datetime64] = []
 
     pres_park_rep: List[float] = []
     pres_profile_deepest: List[float] = []
+
+    park_sampled: List[bool] = []
+    valid_for_bvp: List[bool] = []
 
     T_NAT = np.datetime64("NaT", "ns")
     V_NAN = np.nan
@@ -245,6 +249,15 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
 
         # park start: first park code (289/290/301/...)
         tps = _first_time_of_any_code(tc, mcc, DEFAULT_RULES.park_codes)
+
+        # park end: last sample labeled as park drift (or NaT if none)
+        park_idx = np.where(phc == PHASE_PARK_DRIFT)[0]
+        tpe = tc[int(park_idx[-1])] if park_idx.size > 0 else None
+
+        # explicit flag: whether IMU sampled the parking phase
+        park_has_samples = park_idx.size > 0
+        park_sampled.append(bool(park_has_samples))
+        valid_for_bvp.append(bool(park_has_samples))
 
         # descent to profile start: first descent-to-profile code
         tdps = _first_time_of_any_code(tc, mcc, DEFAULT_RULES.descent_to_profile_codes)
@@ -289,6 +302,7 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
         cycle_number_out.append(int(c))
         t_cycle_start.append(tcs if tcs is not None else T_NAT)
         t_park_start.append(tps if tps is not None else T_NAT)
+        t_park_end.append(tpe if tpe is not None else T_NAT)
         t_descent_to_profile_start.append(tdps if tdps is not None else T_NAT)
         t_profile_deepest.append(tdeep if tdeep is not None else T_NAT)
         t_ascent_start.append(tas if tas is not None else T_NAT)
@@ -305,6 +319,7 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
 
             t_cycle_start=("cycle", np.asarray(t_cycle_start, dtype="datetime64[ns]")),
             t_park_start=("cycle", np.asarray(t_park_start, dtype="datetime64[ns]")),
+            t_park_end=("cycle", np.asarray(t_park_end, dtype="datetime64[ns]")),
             t_descent_to_profile_start=("cycle", np.asarray(t_descent_to_profile_start, dtype="datetime64[ns]")),
             t_profile_deepest=("cycle", np.asarray(t_profile_deepest, dtype="datetime64[ns]")),
             t_ascent_start=("cycle", np.asarray(t_ascent_start, dtype="datetime64[ns]")),
@@ -313,6 +328,9 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
 
             pres_park_rep=("cycle", np.asarray(pres_park_rep, dtype=float)),
             pres_profile_deepest=("cycle", np.asarray(pres_profile_deepest, dtype=float)),
+
+            park_sampled=("cycle", np.asarray(park_sampled, dtype=bool)),
+            valid_for_bvp=("cycle", np.asarray(valid_for_bvp, dtype=bool)),
         ),
         attrs=dict(
             platform=str(ds_continuous.attrs.get("platform", "")),
@@ -332,6 +350,7 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
             idx1=("segment", np.asarray(seg_i1, dtype=int)),
             t0=("segment", np.asarray(seg_t0, dtype="datetime64[ns]")),
             t1=("segment", np.asarray(seg_t1, dtype="datetime64[ns]")),
+            is_parking_phase=("segment", np.asarray([name == PHASE_PARK_DRIFT for name in seg_name], dtype=bool)),
         ),
         attrs=dict(
             platform=str(ds_continuous.attrs.get("platform", "")),

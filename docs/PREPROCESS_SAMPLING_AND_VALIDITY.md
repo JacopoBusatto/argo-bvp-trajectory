@@ -159,6 +159,20 @@ The preprocessing pipeline must, for each cycle:
 The preprocessing output must contain all information required by the BVP solver
 to operate **only on valid cycles**.
 
+### Encoded outputs
+
+The preprocessing products record the parking sampling and validity decisions
+explicitly so the solver can filter cycles without re-deriving them:
+
+- `ds_cycles.park_sampled` — `True` if IMU samples the parking phase,
+  otherwise `False`.
+- `ds_cycles.valid_for_bvp` — mirrors `park_sampled`; marks cycles eligible
+  for BVP analysis.
+- `ds_cycles.t_park_start`, `ds_cycles.t_park_end` — parking window bounds
+  derived from parking measurement codes.
+- `ds_segments.is_parking_phase` — flags which contiguous segments correspond
+  to the parking phase.
+
 ---
 
 ## Role of the BVP solver
