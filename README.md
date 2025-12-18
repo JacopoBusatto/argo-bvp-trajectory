@@ -89,6 +89,9 @@ Supported schemes:
 4. PREPROCESSING PIPELINE (Coriolis AUX + TRAJ)
 ------------------------------------------------------------
 
+📘 For a detailed description of the preprocessing pipeline and debug tools,
+see [docs/MANUALE_PREPROCESS.md](docs/MANUALE_PREPROCESS.md).
+
 Goal:
 Transform Coriolis Argo NetCDF files into compact, analysis-ready products:
 - a continuous IMU dataset (time series),
