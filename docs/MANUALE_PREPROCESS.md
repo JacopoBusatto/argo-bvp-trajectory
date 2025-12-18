@@ -233,6 +233,24 @@ Uso tipico:
 
 
 ------------------------------------------------------------
+2.10 bvp_ready.py
+------------------------------------------------------------
+
+Responsabilita:
+- costruisce un dataset "BVP-ready" con solo le finestre di parking
+- include solo i cicli valid_for_bvp == True
+- espone time, accelerazioni orizzontali, pressione come z proxy, e il vincolo di superficie post-parking
+
+Uso tipico:
+
+    python -m argobvp.preprocess.bvp_ready \
+        --cont outputs/preprocess/<platform>_preprocessed_imu.nc \
+        --cycles outputs/preprocess/<platform>_cycles.nc \
+        --segments outputs/preprocess/<platform>_segments.nc \
+        --out outputs/preprocess
+
+
+------------------------------------------------------------
 3. SCRIPT DI DEBUG
 ------------------------------------------------------------
 
