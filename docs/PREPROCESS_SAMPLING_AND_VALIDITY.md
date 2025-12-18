@@ -154,7 +154,7 @@ The preprocessing pipeline must, for each cycle:
 4. Provide:
    - surface position constraints before and after parking,
    - temporal diagnostics linking physical events and observations.
-5. **Not** perform any trajectory integration.
+5. **Not** perform any trajectory integration. 
 
 The preprocessing output must contain all information required by the BVP solver
 to operate **only on valid cycles**.
