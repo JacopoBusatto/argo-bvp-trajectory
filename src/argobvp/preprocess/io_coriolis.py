@@ -28,11 +28,11 @@ AUX_REQUIRED_VARS = [
 
 
 def open_aux(path: str | Path) -> xr.Dataset:
-    return xr.open_dataset(path)
+    return xr.open_dataset(path, decode_timedelta=False)
 
 
 def open_traj(path: str | Path) -> xr.Dataset:
-    return xr.open_dataset(path)
+    return xr.open_dataset(path, decode_timedelta=False)
 
 
 def _as_1d(da: xr.DataArray) -> np.ndarray:

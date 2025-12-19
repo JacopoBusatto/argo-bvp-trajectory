@@ -3,12 +3,24 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import argparse
-from typing import Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 import xarray as xr
 
 from .writers import write_netcdf
+
+
+PHASE_VAR_BASE: Dict[str, str] = {
+    "park_drift": "parking",
+    "ascent": "ascent",
+    "descent_to_profile": "descent_to_profile",
+    "profile_drift": "profile_drift",
+    "surface": "surface",
+    "in_air": "in_air",
+    "grounded": "grounded",
+    "other": "other",
+}
 
 
 @dataclass(frozen=True)
@@ -21,23 +33,17 @@ class BVPReadyConfig:
         "acc"     -> use total accelerations (acc_ned_n/e) if present
     acc_n_name / acc_e_name:
         Optional explicit variable names to override discovery.
-    min_parking_samples_for_bvp:
-        Optional override; if None, uses value stored in ds_cycles attrs or defaults to 10.
+    min_parking_samples_for_bvp / min_phase_samples_for_bvp:
+        Optional overrides; fall back to ds_cycles attrs or default=10.
     """
 
     acc_source: str = "acc_lin"
     acc_n_name: str | None = None
     acc_e_name: str | None = None
     min_parking_samples_for_bvp: int | None = None
+    min_phase_samples_for_bvp: int | None = None
 
     def resolve_acc_vars(self, ds_continuous: xr.Dataset) -> Tuple[str, str]:
-        """
-        Decide which acceleration components to use (n/e).
-        Preference order:
-          1) explicit overrides
-          2) requested source
-          3) fallback to the other pair if requested not found
-        """
         if self.acc_n_name and self.acc_e_name:
             return self.acc_n_name, self.acc_e_name
 
@@ -68,21 +74,23 @@ def _require_vars(ds: xr.Dataset, required: Iterable[str], label: str) -> None:
         raise KeyError(f"{label} missing required variables: {missing}")
 
 
-def _resolve_min_samples(cfg: BVPReadyConfig, ds_cycles: xr.Dataset) -> int:
-    if cfg.min_parking_samples_for_bvp is not None:
-        return int(cfg.min_parking_samples_for_bvp)
-    if "min_parking_samples_for_bvp" in ds_cycles.attrs:
-        return int(ds_cycles.attrs["min_parking_samples_for_bvp"])
-    return 10
+def _resolve_thresholds(cfg: BVPReadyConfig, ds_cycles: xr.Dataset) -> Tuple[int, int]:
+    mp = cfg.min_parking_samples_for_bvp
+    mp = int(mp) if mp is not None else int(ds_cycles.attrs.get("min_parking_samples_for_bvp", 10))
+    mo = cfg.min_phase_samples_for_bvp
+    mo = int(mo) if mo is not None else int(ds_cycles.attrs.get("min_phase_samples_for_bvp", 10))
+    return mp, mo
 
 
-def _parking_segments_for_cycle(ds_segments: xr.Dataset, cycle_number: int) -> List[Tuple[int, int]]:
+def _segments_for_cycle_phase(
+    ds_segments: xr.Dataset, cycle_number: int, phase_name: str
+) -> List[Tuple[int, int]]:
     cyc = np.asarray(ds_segments["cycle_number"].values).astype(int)
-    is_park = np.asarray(ds_segments["is_parking_phase"].values).astype(bool)
+    seg_name = np.asarray(ds_segments["segment_name"].values).astype(str)
     idx0 = np.asarray(ds_segments["idx0"].values).astype(int)
     idx1 = np.asarray(ds_segments["idx1"].values).astype(int)
 
-    m = (cyc == int(cycle_number)) & is_park
+    m = (cyc == int(cycle_number)) & (seg_name == phase_name)
     if not np.any(m):
         return []
 
@@ -90,6 +98,15 @@ def _parking_segments_for_cycle(ds_segments: xr.Dataset, cycle_number: int) -> L
     s1 = idx1[m]
     order = np.argsort(s0)
     return [(int(s0[i]), int(s1[i])) for i in order]
+
+
+def _gather_phase_vars(required_phase_bases: Iterable[str]) -> Tuple[List[str], List[str]]:
+    n_vars = []
+    att_vars = []
+    for base in required_phase_bases:
+        n_vars.append(f"{base}_n_obs")
+        att_vars.append(f"{base}_attendible")
+    return n_vars, att_vars
 
 
 def build_bvp_ready_dataset(
@@ -100,152 +117,175 @@ def build_bvp_ready_dataset(
     cfg: BVPReadyConfig | None = None,
 ) -> xr.Dataset:
     """
-    Extract a minimal, parking-phase-only view for BVP.
+    Extract a BVP-ready view including all attendible phases (parking mandatory).
     Includes only cycles with valid_for_bvp == True.
     """
     cfg = cfg or BVPReadyConfig()
 
     acc_n_var, acc_e_var = cfg.resolve_acc_vars(ds_continuous)
 
-    _require_vars(ds_continuous, ["time", "pres", "cycle_number", acc_n_var, acc_e_var], "ds_continuous")
-    _require_vars(
-        ds_cycles,
-        [
-            "cycle_number",
-            "t_park_start",
-            "t_park_end",
-            "valid_for_bvp",
-            "parking_n_obs",
-            "lat_surface_end",
-            "lon_surface_end",
-            "pos_age_s",
-            "pos_source",
-        ],
-        "ds_cycles",
-    )
-    _require_vars(ds_segments, ["cycle_number", "idx0", "idx1", "is_parking_phase", "t0", "t1"], "ds_segments")
+    phase_bases = list(PHASE_VAR_BASE.values())
+    n_vars, att_vars = _gather_phase_vars(phase_bases)
 
-    min_samples = _resolve_min_samples(cfg, ds_cycles)
+    required_cycles = [
+        "cycle_number",
+        "t_park_start",
+        "t_park_end",
+        "valid_for_bvp",
+        "parking_n_obs",
+        "lat_surface_end",
+        "lon_surface_end",
+        "pos_age_s",
+        "pos_source",
+        "t_surface_end",
+    ] + n_vars + att_vars
+    _require_vars(ds_continuous, ["time", "pres", "cycle_number", acc_n_var, acc_e_var], "ds_continuous")
+    _require_vars(ds_cycles, required_cycles, "ds_cycles")
+    _require_vars(ds_segments, ["cycle_number", "idx0", "idx1", "segment_name"], "ds_segments")
+
+    min_parking_samples, min_phase_samples = _resolve_thresholds(cfg, ds_cycles)
     parking_counts = np.asarray(ds_cycles["parking_n_obs"].values).astype(int)
     n_total = parking_counts.size
-    n_too_few = int(np.sum(parking_counts < min_samples))
+    n_too_few = int(np.sum(parking_counts < min_parking_samples))
     if n_too_few > 0:
         print(
             f"[bvp_ready] cycles skipped by parking sample threshold "
-            f"(parking_n_obs < {min_samples}): {n_too_few} / {n_total}"
+            f"(parking_n_obs < {min_parking_samples}): {n_too_few} / {n_total}"
         )
 
-    # Filter valid cycles (keep xarray mask to preserve coords)
     valid_mask = ds_cycles["valid_for_bvp"].astype(bool)
     ds_cyc_valid = ds_cycles.where(valid_mask, drop=True)
-    cycle_numbers = np.asarray(ds_cyc_valid["cycle_number"].values).astype(int)
+    cycle_numbers_all = np.asarray(ds_cyc_valid["cycle_number"].values).astype(int)
 
     time_all = np.asarray(ds_continuous["time"].values).astype("datetime64[ns]")
     pres_all = np.asarray(ds_continuous["pres"].values).astype(float)
     acc_n_all = np.asarray(ds_continuous[acc_n_var].values).astype(float)
     acc_e_all = np.asarray(ds_continuous[acc_e_var].values).astype(float)
-
-    sample_time: List[np.datetime64] = []
-    sample_acc_n: List[float] = []
-    sample_acc_e: List[float] = []
-    sample_pres: List[float] = []
-    sample_cycle_number: List[int] = []
-    sample_cycle_index: List[int] = []
-    sample_obs_index: List[int] = []
+    obs_time: List[np.datetime64] = []
+    obs_acc_n: List[float] = []
+    obs_acc_e: List[float] = []
+    obs_pres: List[float] = []
+    obs_phase: List[str] = []
+    obs_cycle_number: List[int] = []
+    obs_cycle_index: List[int] = []
+    obs_index: List[int] = []
 
     row_start: List[int] = []
     row_size: List[int] = []
-    row_idx0: List[int] = []
-    row_idx1: List[int] = []
     row_t0: List[np.datetime64] = []
     row_t1: List[np.datetime64] = []
-    cyc_t_park_start: List[np.datetime64] = []
-    cyc_t_park_end: List[np.datetime64] = []
+
+    cyc_meta_times: Dict[str, List[np.datetime64]] = {
+        "t_cycle_start": [],
+        "t_descent_to_profile_start": [],
+        "t_profile_deepest": [],
+        "t_ascent_start": [],
+        "t_surface_start": [],
+        "t_surface_end": [],
+        "t_park_start": [],
+        "t_park_end": [],
+    }
     cyc_lat_surface_end: List[float] = []
     cyc_lon_surface_end: List[float] = []
     cyc_pos_age_s: List[float] = []
     cyc_pos_source: List[str] = []
 
+    phase_att_out: Dict[str, List[bool]] = {base: [] for base in phase_bases}
+    phase_n_out: Dict[str, List[int]] = {base: [] for base in phase_bases}
+
     cycles_out: List[int] = []
     offset = 0
 
-    for cyc in cycle_numbers:
-        segs = _parking_segments_for_cycle(ds_segments, cyc)
-        if not segs:
-            raise RuntimeError(f"Cycle {cyc} is marked valid_for_bvp but has no parking segment.")
+    for cyc in cycle_numbers_all:
+        row = ds_cyc_valid.sel(cycle=cyc)
+
+        attendible_phases: List[str] = []
+        for phase_name, base in PHASE_VAR_BASE.items():
+            att_var = f"{base}_attendible"
+            if att_var not in row:
+                continue
+            if bool(row[att_var].values):
+                attendible_phases.append(phase_name)
+
+        if "park_drift" not in attendible_phases:
+            print(f"[bvp_ready] skip cycle {cyc}: parking not attendible")
+            continue
 
         local_time: List[np.datetime64] = []
         local_acc_n: List[float] = []
         local_acc_e: List[float] = []
         local_pres: List[float] = []
+        local_phase: List[str] = []
         local_obs_idx: List[int] = []
 
-        for (a, b) in segs:
-            if b <= a:
+        for ph in attendible_phases:
+            segs = _segments_for_cycle_phase(ds_segments, cyc, ph)
+            if not segs:
                 continue
-            obs_idx = np.arange(a, b, dtype=int)
-
-            local_time.extend(time_all[a:b])
-            local_acc_n.extend(acc_n_all[a:b])
-            local_acc_e.extend(acc_e_all[a:b])
-            local_pres.extend(pres_all[a:b])
-            local_obs_idx.extend(obs_idx.tolist())
+            for (a, b) in segs:
+                if b <= a:
+                    continue
+                idx = np.arange(a, b, dtype=int)
+                local_time.extend(time_all[a:b])
+                local_acc_n.extend(acc_n_all[a:b])
+                local_acc_e.extend(acc_e_all[a:b])
+                local_pres.extend(pres_all[a:b])
+                local_phase.extend([ph] * (b - a))
+                local_obs_idx.extend(idx.tolist())
 
         n_this = len(local_time)
         if n_this == 0:
-            raise RuntimeError(f"Cycle {cyc} is marked valid_for_bvp but parking slice has zero samples.")
-        if n_this < min_samples:
-            print(
-                f"[bvp_ready] skip cycle {cyc}: parking samples {n_this} < min_parking_samples_for_bvp {min_samples}"
-            )
+            print(f"[bvp_ready] skip cycle {cyc}: no attendible phase samples found")
             continue
 
         idx_out = len(cycles_out)
         cycles_out.append(int(cyc))
-
-        row_idx0.append(int(segs[0][0]))
-        row_idx1.append(int(segs[-1][1]))
         row_start.append(int(offset))
         row_size.append(int(n_this))
-        offset += n_this
-
         row_t0.append(np.asarray(local_time[0]).astype("datetime64[ns]"))
         row_t1.append(np.asarray(local_time[-1]).astype("datetime64[ns]"))
+        offset += n_this
 
-        sample_time.extend(local_time)
-        sample_acc_n.extend(local_acc_n)
-        sample_acc_e.extend(local_acc_e)
-        sample_pres.extend(local_pres)
-        sample_cycle_number.extend([int(cyc)] * n_this)
-        sample_cycle_index.extend([int(idx_out)] * n_this)
-        sample_obs_index.extend(local_obs_idx)
+        obs_time.extend(local_time)
+        obs_acc_n.extend(local_acc_n)
+        obs_acc_e.extend(local_acc_e)
+        obs_pres.extend(local_pres)
+        obs_phase.extend(local_phase)
+        obs_cycle_number.extend([int(cyc)] * n_this)
+        obs_cycle_index.extend([int(idx_out)] * n_this)
+        obs_index.extend(local_obs_idx)
 
-        row = ds_cyc_valid.sel(cycle=cyc)
-        cyc_t_park_start.append(np.asarray(row["t_park_start"].values).astype("datetime64[ns]"))
-        cyc_t_park_end.append(np.asarray(row["t_park_end"].values).astype("datetime64[ns]"))
+        for k in cyc_meta_times:
+            cyc_meta_times[k].append(
+                np.asarray(row[k].values).astype("datetime64[ns]") if k in row else np.datetime64("NaT")
+            )
         cyc_lat_surface_end.append(float(row["lat_surface_end"].values))
         cyc_lon_surface_end.append(float(row["lon_surface_end"].values))
         cyc_pos_age_s.append(float(row["pos_age_s"].values))
         cyc_pos_source.append(str(row["pos_source"].values))
 
-    n_samples = len(sample_time)
+        for phase_name, base in PHASE_VAR_BASE.items():
+            att_var = f"{base}_attendible"
+            n_var = f"{base}_n_obs"
+            att_val = bool(row[att_var].values) if att_var in row else False
+            n_val = int(row[n_var].values) if n_var in row else 0
+            phase_att_out[base].append(att_val)
+            phase_n_out[base].append(n_val)
+
+    n_obs = len(obs_time)
     cycles_out_arr = np.asarray(cycles_out, dtype=int)
 
     ds_out = xr.Dataset(
         coords=dict(
-            sample=("sample", np.arange(n_samples, dtype=int)),
+            obs=("obs", np.arange(n_obs, dtype=int)),
             cycle=("cycle", cycles_out_arr),
         ),
         data_vars=dict(
             cycle_number=("cycle", cycles_out_arr),
-            idx0=("cycle", np.asarray(row_idx0, dtype=int)),
-            idx1=("cycle", np.asarray(row_idx1, dtype=int)),
             row_start=("cycle", np.asarray(row_start, dtype=int)),
             row_size=("cycle", np.asarray(row_size, dtype=int)),
             t0=("cycle", np.asarray(row_t0, dtype="datetime64[ns]")),
             t1=("cycle", np.asarray(row_t1, dtype="datetime64[ns]")),
-            t_park_start=("cycle", np.asarray(cyc_t_park_start, dtype="datetime64[ns]")),
-            t_park_end=("cycle", np.asarray(cyc_t_park_end, dtype="datetime64[ns]")),
             lat_surface_end=("cycle", np.asarray(cyc_lat_surface_end, dtype=float)),
             lon_surface_end=("cycle", np.asarray(cyc_lon_surface_end, dtype=float)),
             pos_age_s=("cycle", np.asarray(cyc_pos_age_s, dtype=float)),
@@ -258,21 +298,30 @@ def build_bvp_ready_dataset(
                     ds_cycles.attrs.get("platform", ""),
                 )
             ),
-            min_parking_samples_for_bvp=int(min_samples),
+            min_parking_samples_for_bvp=int(min_parking_samples),
+            min_phase_samples_for_bvp=int(min_phase_samples),
             acc_source=f"{acc_n_var},{acc_e_var}",
-            notes="Parking-phase-only view for BVP; samples come from ds_continuous slices of ds_segments.is_parking_phase.",
+            notes="BVP-ready view including all attendible phases; parking attendible is mandatory.",
+            phase_name_map=str(PHASE_VAR_BASE),
         ),
     )
 
-    ds_out["time"] = ("sample", np.asarray(sample_time, dtype="datetime64[ns]"))
-    ds_out["acc_n"] = ("sample", np.asarray(sample_acc_n, dtype=float))
-    ds_out["acc_e"] = ("sample", np.asarray(sample_acc_e, dtype=float))
-    ds_out["z_from_pres"] = ("sample", np.asarray(sample_pres, dtype=float))
-    ds_out["cycle_number_for_sample"] = ("sample", np.asarray(sample_cycle_number, dtype=int))
-    ds_out["cycle_index"] = ("sample", np.asarray(sample_cycle_index, dtype=int))
-    ds_out["obs_index"] = ("sample", np.asarray(sample_obs_index, dtype=int))
+    for k, vals in cyc_meta_times.items():
+        ds_out[k] = ("cycle", np.asarray(vals, dtype="datetime64[ns]"))
+    for base, vals in phase_att_out.items():
+        ds_out[f"{base}_attendible"] = ("cycle", np.asarray(vals, dtype=bool))
+    for base, vals in phase_n_out.items():
+        ds_out[f"{base}_n_obs"] = ("cycle", np.asarray(vals, dtype=int))
 
-    # Units/metadata
+    ds_out["time"] = ("obs", np.asarray(obs_time, dtype="datetime64[ns]"))
+    ds_out["acc_n"] = ("obs", np.asarray(obs_acc_n, dtype=float))
+    ds_out["acc_e"] = ("obs", np.asarray(obs_acc_e, dtype=float))
+    ds_out["z_from_pres"] = ("obs", np.asarray(obs_pres, dtype=float))
+    ds_out["phase_name"] = ("obs", np.asarray(obs_phase, dtype=object))
+    ds_out["cycle_number_for_obs"] = ("obs", np.asarray(obs_cycle_number, dtype=int))
+    ds_out["cycle_index"] = ("obs", np.asarray(obs_cycle_index, dtype=int))
+    ds_out["obs_index"] = ("obs", np.asarray(obs_index, dtype=int))
+
     if "units" in ds_continuous[acc_n_var].attrs:
         ds_out["acc_n"].attrs["units"] = ds_continuous[acc_n_var].attrs["units"]
         ds_out["acc_e"].attrs["units"] = ds_continuous[acc_n_var].attrs["units"]
@@ -287,11 +336,11 @@ def build_bvp_ready_dataset(
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        description="Build a parking-phase BVP-ready NetCDF from preprocess outputs.",
+        description="Build a BVP-ready NetCDF from preprocess outputs (all attendible phases; parking mandatory).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     p.add_argument("--cont", required=True, help="Path to *_preprocessed_imu.nc")
-    p.add_argument("--cycles", required=True, help="Path to *_cycles.nc (with valid_for_bvp + surface fixes)")
+    p.add_argument("--cycles", required=True, help="Path to *_cycles.nc (with valid_for_bvp + phase attendibility)")
     p.add_argument("--segments", required=True, help="Path to *_segments.nc")
     p.add_argument(
         "--acc-source",
@@ -318,15 +367,42 @@ def _derive_out_path(out_arg: str, platform: str) -> Path:
     return out_path
 
 
+def _print_selection_summary(ds_bvp: xr.Dataset) -> None:
+    n_cycles = int(ds_bvp.sizes.get("cycle", 0))
+    n_obs = int(ds_bvp.sizes.get("obs", 0))
+    print(f"[bvp_ready] selected cycles: {n_cycles}, observations: {n_obs}")
+    if n_obs == 0:
+        return
+    phases = np.asarray(ds_bvp["phase_name"].values).astype(str)
+    uniq, cnt = np.unique(phases, return_counts=True)
+    for u, c in zip(uniq, cnt):
+        print(f"  phase={u:>18s} : {int(c)} samples")
+
+
 def main() -> None:
     args = _build_parser().parse_args()
-    cfg = BVPReadyConfig(acc_source=args.acc_source, acc_n_name=args.acc_n_var, acc_e_name=args.acc_e_var)
+    cfg = BVPReadyConfig(
+        acc_source=args.acc_source,
+        acc_n_name=args.acc_n_var,
+        acc_e_name=args.acc_e_var,
+    )
 
     ds_cont = xr.open_dataset(args.cont)
     ds_cyc = xr.open_dataset(args.cycles)
     ds_seg = xr.open_dataset(args.segments)
 
     ds_bvp = build_bvp_ready_dataset(ds_cont, ds_cyc, ds_seg, cfg=cfg)
+
+    if ds_bvp.sizes.get("cycle", 0) == 0:
+        total = int(ds_cyc.sizes.get("cycle", 0))
+        print(f"No valid cycles for BVP-ready output (0/{total}).")
+        ds_cont.close()
+        ds_cyc.close()
+        ds_seg.close()
+        ds_bvp.close()
+        raise SystemExit(2)
+
+    _print_selection_summary(ds_bvp)
 
     platform = str(
         ds_bvp.attrs.get(

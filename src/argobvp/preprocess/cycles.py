@@ -21,6 +21,17 @@ PHASE_ASCENT = "ascent"
 PHASE_IN_AIR = "in_air"
 PHASE_GROUNDED = "grounded"
 
+PHASES_FOR_ATTENDIBILITY = [
+    PHASE_PARK_DRIFT,
+    PHASE_ASCENT,
+    PHASE_DESCENT_TO_PROFILE,
+    PHASE_PROFILE_DRIFT,
+    PHASE_SURFACE,
+    PHASE_IN_AIR,
+    PHASE_GROUNDED,
+    PHASE_OTHER,
+]
+
 
 @dataclass(frozen=True)
 class PhaseRules:
@@ -219,6 +230,9 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
     T_NAT = np.datetime64("NaT", "ns")
     V_NAN = np.nan
 
+    phase_counts = {ph: [] for ph in PHASES_FOR_ATTENDIBILITY}
+    phase_attendible = {ph: [] for ph in PHASES_FOR_ATTENDIBILITY}
+
     for c in cycles:
         m = (cyc == int(c))
         if not np.any(m):
@@ -256,12 +270,21 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
         park_idx = np.where(phc == PHASE_PARK_DRIFT)[0]
         tpe = tc[int(park_idx[-1])] if park_idx.size > 0 else None
 
-        # Parking sampling counts/flags
-        n_park = int(park_idx.size)
+        # Phase sampling counts/flags
+        for ph in PHASES_FOR_ATTENDIBILITY:
+            n = int(np.sum(phc == ph))
+            phase_counts[ph].append(n)
+            if ph == PHASE_PARK_DRIFT:
+                att = n >= int(cfg.min_parking_samples_for_bvp)
+            else:
+                att = n >= int(cfg.min_phase_samples_for_bvp)
+            phase_attendible[ph].append(bool(att))
+
+        n_park = phase_counts[PHASE_PARK_DRIFT][-1]
         parking_n_obs.append(n_park)
         park_has_samples = n_park > 0
         park_sampled.append(bool(park_has_samples))
-        attendible = n_park >= int(cfg.min_parking_samples_for_bvp)
+        attendible = phase_attendible[PHASE_PARK_DRIFT][-1]
         parking_attendible.append(bool(attendible))
         valid_for_bvp.append(bool(attendible))
 
@@ -318,6 +341,17 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
         pres_park_rep.append(ppark)
         pres_profile_deepest.append(pdeep)
 
+    phase_data_vars = {}
+    for ph in PHASES_FOR_ATTENDIBILITY:
+        if ph == PHASE_PARK_DRIFT:
+            # parking_n_obs / parking_attendible are handled explicitly above
+            continue
+        base = ph
+        n_name = f"{base}_n_obs"
+        att_name = f"{base}_attendible"
+        phase_data_vars[n_name] = ("cycle", np.asarray(phase_counts[ph], dtype=int))
+        phase_data_vars[att_name] = ("cycle", np.asarray(phase_attendible[ph], dtype=bool))
+
     ds_cycles = xr.Dataset(
         coords=dict(cycle=("cycle", np.asarray(cycle_number_out, dtype=int))),
         data_vars=dict(
@@ -339,11 +373,13 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
             parking_attendible=("cycle", np.asarray(parking_attendible, dtype=bool)),
             park_sampled=("cycle", np.asarray(park_sampled, dtype=bool)),
             valid_for_bvp=("cycle", np.asarray(valid_for_bvp, dtype=bool)),
+            **phase_data_vars,
         ),
         attrs=dict(
             platform=str(ds_continuous.attrs.get("platform", "")),
             pres_surface_max=float(cfg.pres_surface_max),
             min_parking_samples_for_bvp=int(cfg.min_parking_samples_for_bvp),
+            min_phase_samples_for_bvp=int(cfg.min_phase_samples_for_bvp),
             notes="Keypoints derived from MEASUREMENT_CODE when available; fallbacks use pressure thresholds/extrema.",
         ),
     )
