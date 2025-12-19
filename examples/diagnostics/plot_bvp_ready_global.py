@@ -56,7 +56,7 @@ def _plot_map(ds_cycles: xr.Dataset, outdir: Path | None) -> None:
     title = "Surface fixes"
     platform = ds_cycles.attrs.get("platform", "")
     if platform:
-        title += f" — {platform}"
+        title += f" - {platform}"
     ax.set_title(title)
     ax.legend()
     ax.grid(True, ls="--", alpha=0.4)
@@ -68,6 +68,23 @@ def _plot_map(ds_cycles: xr.Dataset, outdir: Path | None) -> None:
         fig.savefig(out, dpi=150, bbox_inches="tight")
         print(f"[saved] {out}")
         plt.close(fig)
+
+
+def _print_parking_summary(ds_cycles: xr.Dataset) -> None:
+    _require_vars(ds_cycles, ["parking_n_obs", "valid_for_bvp"], "ds_cycles")
+    counts = np.asarray(ds_cycles["parking_n_obs"].values, dtype=float)
+    counts = counts[np.isfinite(counts)]
+    n_total = counts.size
+    n_valid = int(np.sum(np.asarray(ds_cycles["valid_for_bvp"].values, dtype=bool)))
+    if n_total == 0:
+        print("No cycles found in ds_cycles.")
+        return
+    q = np.percentile(counts, [0, 10, 50, 90, 100]) if counts.size else [np.nan] * 5
+    print(
+        f"Cycles summary: total={n_total}, valid_for_bvp={n_valid}, "
+        f"parking_n_obs min/p10/med/p90/max = "
+        f"{q[0]:.0f}/{q[1]:.0f}/{q[2]:.0f}/{q[3]:.0f}/{q[4]:.0f}"
+    )
 
 
 def _plot_accel_for_cycle(
@@ -100,9 +117,9 @@ def _plot_accel_for_cycle(
     for t, vn, ve in zip(t_list, an_list, ae_list):
         ax.plot(t, vn, label="acc_n")
         ax.plot(t, ve, label="acc_e", alpha=0.7)
-    ax.set_title(f"Cycle {cyc} — parking acceleration ({acc_n_var}/{acc_e_var})")
+    ax.set_title(f"Cycle {cyc} - parking acceleration ({acc_n_var}/{acc_e_var})")
     ax.set_xlabel("Time")
-    ax.set_ylabel("Acceleration (m/s²)")
+    ax.set_ylabel("Acceleration (m/s^2)")
     ax.grid(True, ls="--", alpha=0.4)
     ax.legend()
 
@@ -139,7 +156,7 @@ def _plot_pressure_for_cycle(
     fig, ax = plt.subplots(figsize=(10, 4))
     for t, p in zip(t_list, p_list):
         ax.plot(t, p, color="tab:blue")
-    ax.set_title(f"Cycle {cyc} — parking pressure")
+    ax.set_title(f"Cycle {cyc} - parking pressure")
     ax.set_xlabel("Time")
     ax.set_ylabel("Pressure (dbar)")
     ax.invert_yaxis()
@@ -180,11 +197,16 @@ def main():
     ds_bvp = xr.open_dataset(args.bvp)
 
     # Basic presence checks
-    _require_vars(ds_cycles, ["cycle_number", "valid_for_bvp", "lon_surface_end", "lat_surface_end"], "ds_cycles")
+    _require_vars(
+        ds_cycles,
+        ["cycle_number", "valid_for_bvp", "lon_surface_end", "lat_surface_end", "parking_n_obs"],
+        "ds_cycles",
+    )
     _require_vars(ds_segments, ["cycle_number", "idx0", "idx1", "is_parking_phase"], "ds_segments")
     _require_vars(ds_cont, ["time", "pres"], "ds_cont")
     _require_vars(ds_bvp, ["cycle_number", "row_start", "row_size"], "ds_bvp")
 
+    _print_parking_summary(ds_cycles)
     _plot_map(ds_cycles, outdir)
 
     # Pick up to first 6 valid cycles

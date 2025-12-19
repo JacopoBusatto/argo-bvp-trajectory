@@ -211,6 +211,8 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
     pres_park_rep: List[float] = []
     pres_profile_deepest: List[float] = []
 
+    parking_n_obs: List[int] = []
+    parking_attendible: List[bool] = []
     park_sampled: List[bool] = []
     valid_for_bvp: List[bool] = []
 
@@ -254,10 +256,14 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
         park_idx = np.where(phc == PHASE_PARK_DRIFT)[0]
         tpe = tc[int(park_idx[-1])] if park_idx.size > 0 else None
 
-        # explicit flag: whether IMU sampled the parking phase
-        park_has_samples = park_idx.size > 0
+        # Parking sampling counts/flags
+        n_park = int(park_idx.size)
+        parking_n_obs.append(n_park)
+        park_has_samples = n_park > 0
         park_sampled.append(bool(park_has_samples))
-        valid_for_bvp.append(bool(park_has_samples))
+        attendible = n_park >= int(cfg.min_parking_samples_for_bvp)
+        parking_attendible.append(bool(attendible))
+        valid_for_bvp.append(bool(attendible))
 
         # descent to profile start: first descent-to-profile code
         tdps = _first_time_of_any_code(tc, mcc, DEFAULT_RULES.descent_to_profile_codes)
@@ -329,12 +335,15 @@ def build_cycle_products(ds_continuous: xr.Dataset, cfg: PreprocessConfig) -> Tu
             pres_park_rep=("cycle", np.asarray(pres_park_rep, dtype=float)),
             pres_profile_deepest=("cycle", np.asarray(pres_profile_deepest, dtype=float)),
 
+            parking_n_obs=("cycle", np.asarray(parking_n_obs, dtype=int)),
+            parking_attendible=("cycle", np.asarray(parking_attendible, dtype=bool)),
             park_sampled=("cycle", np.asarray(park_sampled, dtype=bool)),
             valid_for_bvp=("cycle", np.asarray(valid_for_bvp, dtype=bool)),
         ),
         attrs=dict(
             platform=str(ds_continuous.attrs.get("platform", "")),
             pres_surface_max=float(cfg.pres_surface_max),
+            min_parking_samples_for_bvp=int(cfg.min_parking_samples_for_bvp),
             notes="Keypoints derived from MEASUREMENT_CODE when available; fallbacks use pressure thresholds/extrema.",
         ),
     )

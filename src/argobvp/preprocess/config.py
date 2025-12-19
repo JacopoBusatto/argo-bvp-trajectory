@@ -77,6 +77,7 @@ class PreprocessConfig:
     imu: IMUConfig = IMUConfig()
 
     pres_surface_max: float = 5.0
+    min_parking_samples_for_bvp: int = 10
     time_reference: str = "1950-01-01T00:00:00Z"
 
     attitude: AttitudeConfig = AttitudeConfig()
@@ -143,6 +144,7 @@ def load_config(path: str | Path) -> PreprocessConfig:
         paths=paths,
         imu=imu,
         pres_surface_max=float(raw_l.get("pres_surface_max", 5.0)),
+        min_parking_samples_for_bvp=int(raw_l.get("min_parking_samples_for_bvp", 10)),
         time_reference=str(raw_l.get("time_reference", "1950-01-01T00:00:00Z")),
         attitude=att,
     )

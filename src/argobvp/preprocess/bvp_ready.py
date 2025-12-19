@@ -21,11 +21,14 @@ class BVPReadyConfig:
         "acc"     -> use total accelerations (acc_ned_n/e) if present
     acc_n_name / acc_e_name:
         Optional explicit variable names to override discovery.
+    min_parking_samples_for_bvp:
+        Optional override; if None, uses value stored in ds_cycles attrs or defaults to 10.
     """
 
     acc_source: str = "acc_lin"
     acc_n_name: str | None = None
     acc_e_name: str | None = None
+    min_parking_samples_for_bvp: int | None = None
 
     def resolve_acc_vars(self, ds_continuous: xr.Dataset) -> Tuple[str, str]:
         """
@@ -63,6 +66,14 @@ def _require_vars(ds: xr.Dataset, required: Iterable[str], label: str) -> None:
     missing = [v for v in required if v not in ds.variables]
     if missing:
         raise KeyError(f"{label} missing required variables: {missing}")
+
+
+def _resolve_min_samples(cfg: BVPReadyConfig, ds_cycles: xr.Dataset) -> int:
+    if cfg.min_parking_samples_for_bvp is not None:
+        return int(cfg.min_parking_samples_for_bvp)
+    if "min_parking_samples_for_bvp" in ds_cycles.attrs:
+        return int(ds_cycles.attrs["min_parking_samples_for_bvp"])
+    return 10
 
 
 def _parking_segments_for_cycle(ds_segments: xr.Dataset, cycle_number: int) -> List[Tuple[int, int]]:
@@ -104,6 +115,7 @@ def build_bvp_ready_dataset(
             "t_park_start",
             "t_park_end",
             "valid_for_bvp",
+            "parking_n_obs",
             "lat_surface_end",
             "lon_surface_end",
             "pos_age_s",
@@ -112,6 +124,16 @@ def build_bvp_ready_dataset(
         "ds_cycles",
     )
     _require_vars(ds_segments, ["cycle_number", "idx0", "idx1", "is_parking_phase", "t0", "t1"], "ds_segments")
+
+    min_samples = _resolve_min_samples(cfg, ds_cycles)
+    parking_counts = np.asarray(ds_cycles["parking_n_obs"].values).astype(int)
+    n_total = parking_counts.size
+    n_too_few = int(np.sum(parking_counts < min_samples))
+    if n_too_few > 0:
+        print(
+            f"[bvp_ready] cycles skipped by parking sample threshold "
+            f"(parking_n_obs < {min_samples}): {n_too_few} / {n_total}"
+        )
 
     # Filter valid cycles (keep xarray mask to preserve coords)
     valid_mask = ds_cycles["valid_for_bvp"].astype(bool)
@@ -137,68 +159,97 @@ def build_bvp_ready_dataset(
     row_idx1: List[int] = []
     row_t0: List[np.datetime64] = []
     row_t1: List[np.datetime64] = []
+    cyc_t_park_start: List[np.datetime64] = []
+    cyc_t_park_end: List[np.datetime64] = []
+    cyc_lat_surface_end: List[float] = []
+    cyc_lon_surface_end: List[float] = []
+    cyc_pos_age_s: List[float] = []
+    cyc_pos_source: List[str] = []
 
+    cycles_out: List[int] = []
     offset = 0
 
-    for i_cyc, cyc in enumerate(cycle_numbers):
+    for cyc in cycle_numbers:
         segs = _parking_segments_for_cycle(ds_segments, cyc)
         if not segs:
             raise RuntimeError(f"Cycle {cyc} is marked valid_for_bvp but has no parking segment.")
 
-        row_idx0.append(int(segs[0][0]))
-        row_idx1.append(int(segs[-1][1]))
+        local_time: List[np.datetime64] = []
+        local_acc_n: List[float] = []
+        local_acc_e: List[float] = []
+        local_pres: List[float] = []
+        local_obs_idx: List[int] = []
 
-        row_start.append(int(offset))
-
-        n_this = 0
         for (a, b) in segs:
             if b <= a:
                 continue
             obs_idx = np.arange(a, b, dtype=int)
 
-            sample_time.extend(time_all[a:b])
-            sample_acc_n.extend(acc_n_all[a:b])
-            sample_acc_e.extend(acc_e_all[a:b])
-            sample_pres.extend(pres_all[a:b])
-            sample_cycle_number.extend([int(cyc)] * (b - a))
-            sample_cycle_index.extend([int(i_cyc)] * (b - a))
-            sample_obs_index.extend(obs_idx.tolist())
+            local_time.extend(time_all[a:b])
+            local_acc_n.extend(acc_n_all[a:b])
+            local_acc_e.extend(acc_e_all[a:b])
+            local_pres.extend(pres_all[a:b])
+            local_obs_idx.extend(obs_idx.tolist())
 
-            n_this += (b - a)
-
+        n_this = len(local_time)
         if n_this == 0:
             raise RuntimeError(f"Cycle {cyc} is marked valid_for_bvp but parking slice has zero samples.")
+        if n_this < min_samples:
+            print(
+                f"[bvp_ready] skip cycle {cyc}: parking samples {n_this} < min_parking_samples_for_bvp {min_samples}"
+            )
+            continue
+
+        idx_out = len(cycles_out)
+        cycles_out.append(int(cyc))
+
+        row_idx0.append(int(segs[0][0]))
+        row_idx1.append(int(segs[-1][1]))
+        row_start.append(int(offset))
         row_size.append(int(n_this))
         offset += n_this
 
-        if n_this > 0:
-            row_t0.append(np.asarray(time_all[segs[0][0]]).astype("datetime64[ns]"))
-            row_t1.append(np.asarray(time_all[segs[-1][1] - 1]).astype("datetime64[ns]"))
-        else:
-            row_t0.append(np.datetime64("NaT"))
-            row_t1.append(np.datetime64("NaT"))
+        row_t0.append(np.asarray(local_time[0]).astype("datetime64[ns]"))
+        row_t1.append(np.asarray(local_time[-1]).astype("datetime64[ns]"))
+
+        sample_time.extend(local_time)
+        sample_acc_n.extend(local_acc_n)
+        sample_acc_e.extend(local_acc_e)
+        sample_pres.extend(local_pres)
+        sample_cycle_number.extend([int(cyc)] * n_this)
+        sample_cycle_index.extend([int(idx_out)] * n_this)
+        sample_obs_index.extend(local_obs_idx)
+
+        row = ds_cyc_valid.sel(cycle=cyc)
+        cyc_t_park_start.append(np.asarray(row["t_park_start"].values).astype("datetime64[ns]"))
+        cyc_t_park_end.append(np.asarray(row["t_park_end"].values).astype("datetime64[ns]"))
+        cyc_lat_surface_end.append(float(row["lat_surface_end"].values))
+        cyc_lon_surface_end.append(float(row["lon_surface_end"].values))
+        cyc_pos_age_s.append(float(row["pos_age_s"].values))
+        cyc_pos_source.append(str(row["pos_source"].values))
 
     n_samples = len(sample_time)
+    cycles_out_arr = np.asarray(cycles_out, dtype=int)
 
     ds_out = xr.Dataset(
         coords=dict(
             sample=("sample", np.arange(n_samples, dtype=int)),
-            cycle=("cycle", cycle_numbers),
+            cycle=("cycle", cycles_out_arr),
         ),
         data_vars=dict(
-            cycle_number=("cycle", cycle_numbers),
+            cycle_number=("cycle", cycles_out_arr),
             idx0=("cycle", np.asarray(row_idx0, dtype=int)),
             idx1=("cycle", np.asarray(row_idx1, dtype=int)),
             row_start=("cycle", np.asarray(row_start, dtype=int)),
             row_size=("cycle", np.asarray(row_size, dtype=int)),
             t0=("cycle", np.asarray(row_t0, dtype="datetime64[ns]")),
             t1=("cycle", np.asarray(row_t1, dtype="datetime64[ns]")),
-            t_park_start=("cycle", np.asarray(ds_cyc_valid["t_park_start"].values, dtype="datetime64[ns]")),
-            t_park_end=("cycle", np.asarray(ds_cyc_valid["t_park_end"].values, dtype="datetime64[ns]")),
-            lat_surface_end=("cycle", np.asarray(ds_cyc_valid["lat_surface_end"].values, dtype=float)),
-            lon_surface_end=("cycle", np.asarray(ds_cyc_valid["lon_surface_end"].values, dtype=float)),
-            pos_age_s=("cycle", np.asarray(ds_cyc_valid["pos_age_s"].values, dtype=float)),
-            pos_source=("cycle", np.asarray(ds_cyc_valid["pos_source"].values).astype(str)),
+            t_park_start=("cycle", np.asarray(cyc_t_park_start, dtype="datetime64[ns]")),
+            t_park_end=("cycle", np.asarray(cyc_t_park_end, dtype="datetime64[ns]")),
+            lat_surface_end=("cycle", np.asarray(cyc_lat_surface_end, dtype=float)),
+            lon_surface_end=("cycle", np.asarray(cyc_lon_surface_end, dtype=float)),
+            pos_age_s=("cycle", np.asarray(cyc_pos_age_s, dtype=float)),
+            pos_source=("cycle", np.asarray(cyc_pos_source, dtype=object)),
         ),
         attrs=dict(
             platform=str(
@@ -207,6 +258,7 @@ def build_bvp_ready_dataset(
                     ds_cycles.attrs.get("platform", ""),
                 )
             ),
+            min_parking_samples_for_bvp=int(min_samples),
             acc_source=f"{acc_n_var},{acc_e_var}",
             notes="Parking-phase-only view for BVP; samples come from ds_continuous slices of ds_segments.is_parking_phase.",
         ),

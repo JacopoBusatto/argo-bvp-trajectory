@@ -50,6 +50,7 @@ Responsabilità:
   - path ai file AUX e TRAJ
   - parametri di calibrazione IMU
   - opzioni di attitude estimation
+  - soglia minima di campioni di parking per considerare un ciclo utilizzabile dal BVP (`min_parking_samples_for_bvp`, default=10)
 
 Uso:
 - usato automaticamente dal runner
