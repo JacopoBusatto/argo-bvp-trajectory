@@ -82,28 +82,26 @@ def build_preprocessed_dataset(ds_aux: xr.Dataset, cfg: PreprocessConfig) -> xr.
     mag_body = calibrate_mag_counts(counts_mag, cfg.imu.mag)
 
     # ------------------------------------------------------------
-    # ATTITUDE (SAFE)
+    # ATTITUDE (SAFE) -- allow identity path for synthetic data
     # ------------------------------------------------------------
-
-    # Roll/pitch derivano dalla direzione della gravità vista dall'accelerometro
-    roll, pitch = roll_pitch_from_acc(acc_body)
-
-    # Yaw è SOLO diagnostico (non tilt-compensated), non usato per togliere g
-    yaw = yaw_from_mag_simple(mag_body)
-
-    # Rotation for gravity removal: ONLY roll/pitch
-    R = r_body_to_ned_from_tilt(roll, pitch)
-
-    a_body_vec = np.stack(
-        [acc_body["x"], acc_body["y"], acc_body["z"]],
-        axis=1
-    )
-
-    a_ned = np.einsum("nij,nj->ni", R, a_body_vec)
-
-    # Gravity removal (NED, D positive)
-    gvec = np.array([0.0, 0.0, cfg.imu.g])
-    a_lin_ned = a_ned - gvec[None, :]
+    if str(cfg.platform).startswith("SYNTHETIC"):
+        roll = np.zeros_like(acc_body["x"])
+        pitch = np.zeros_like(acc_body["x"])
+        yaw = np.zeros_like(acc_body["x"])
+        a_ned = np.stack([acc_body["x"], acc_body["y"], acc_body["z"]], axis=1)
+        gvec = np.array([0.0, 0.0, cfg.imu.g])
+        a_lin_ned = a_ned - gvec[None, :]
+    else:
+        roll, pitch = roll_pitch_from_acc(acc_body)
+        yaw = yaw_from_mag_simple(mag_body)
+        R = r_body_to_ned_from_tilt(roll, pitch)
+        a_body_vec = np.stack(
+            [acc_body["x"], acc_body["y"], acc_body["z"]],
+            axis=1
+        )
+        a_ned = np.einsum("nij,nj->ni", R, a_body_vec)
+        gvec = np.array([0.0, 0.0, cfg.imu.g])
+        a_lin_ned = a_ned - gvec[None, :]
 
     time = _juld_to_datetime64(juld)
 
