@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 
 import numpy as np
 import xarray as xr
@@ -10,7 +10,7 @@ import xarray as xr
 @dataclass(frozen=True)
 class SurfaceFixConfig:
     """
-    Config per ricostruire lat/lon alla t_surface_end usando fix del TRAJ.
+    Config per ricostruire lat/lon usando fix del TRAJ.
     """
     time_var_candidates: tuple[str, ...] = (
         # tempo associato ai record di posizione (spesso è proprio JULD su N=83042)
@@ -61,6 +61,50 @@ def _datetime64_to_seconds(t: np.ndarray) -> np.ndarray:
     return out
 
 
+def _select_surface_before_fix(
+    tv: np.ndarray,
+    lv: np.ndarray,
+    lov: np.ndarray,
+    tv_ns: np.ndarray,
+    *,
+    window_start: np.datetime64,
+    window_end: np.datetime64,
+    target_time: np.datetime64,
+) -> Tuple[float, float, np.datetime64]:
+    if tv.size == 0:
+        return np.nan, np.nan, np.datetime64("NaT")
+
+    if (not np.isnat(window_start)) and (not np.isnat(window_end)) and window_end < window_start:
+        return np.nan, np.nan, np.datetime64("NaT")
+
+    mask = np.ones(tv.shape, dtype=bool)
+    if not np.isnat(window_start):
+        mask &= tv >= window_start
+    if not np.isnat(window_end):
+        mask &= tv <= window_end
+
+    if not np.any(mask):
+        return np.nan, np.nan, np.datetime64("NaT")
+
+    tv_w = tv[mask]
+    lv_w = lv[mask]
+    lov_w = lov[mask]
+    tv_ns_w = tv_ns[mask]
+
+    if np.isnat(target_time):
+        idx = tv_w.size - 1
+        return float(lv_w[idx]), float(lov_w[idx]), np.asarray(tv_w[idx]).astype("datetime64[ns]")
+
+    before = tv_w <= target_time
+    if np.any(before):
+        idx = np.where(before)[0][-1]
+        return float(lv_w[idx]), float(lov_w[idx]), np.asarray(tv_w[idx]).astype("datetime64[ns]")
+
+    target_ns = np.asarray(target_time).astype("datetime64[ns]").astype("int64")
+    idx = int(np.argmin(np.abs(tv_ns_w - target_ns)))
+    return float(lv_w[idx]), float(lov_w[idx]), np.asarray(tv_w[idx]).astype("datetime64[ns]")
+
+
 def add_surface_position_from_traj(
     ds_cycles: xr.Dataset,
     ds_traj: xr.Dataset,
@@ -69,7 +113,9 @@ def add_surface_position_from_traj(
 ) -> xr.Dataset:
     """
     Aggiunge a ds_cycles:
+      - lat_surface_start, lon_surface_start (ultimo fix disponibile prima della discesa)
       - lat_surface_end, lon_surface_end (stimati a t_surface_end)
+      - t_surface_start_fix, t_surface_end_fix (timestamp dei vincoli usati)
       - pos_source: 'interp' | 'nearest' | 'missing'
       - t_pos_used (timestamp del fix usato come vincolo posizione)
       - pos_age_s = t_pos_used - t_surface_end
@@ -147,14 +193,21 @@ def add_surface_position_from_traj(
     # Cycle target times
     if "t_surface_end" not in ds_cycles.variables:
         raise RuntimeError("ds_cycles must contain 't_surface_end'.")
+    if "t_cycle_start" not in ds_cycles.variables:
+        raise RuntimeError("ds_cycles must contain 't_cycle_start'.")
 
     t_target = np.asarray(ds_cycles["t_surface_end"].values).astype("datetime64[ns]")
     t_target_s = _datetime64_to_seconds(t_target)
+    t_cycle_start = np.asarray(ds_cycles["t_cycle_start"].values).astype("datetime64[ns]")
 
     n = t_target.size
 
     lat_out = np.full((n,), np.nan, dtype=float)
     lon_out = np.full((n,), np.nan, dtype=float)
+    lat_surface_start = np.full((n,), np.nan, dtype=float)
+    lon_surface_start = np.full((n,), np.nan, dtype=float)
+    t_surface_start_fix = np.full((n,), np.datetime64("NaT"), dtype="datetime64[ns]")
+    t_surface_end_fix = np.full((n,), np.datetime64("NaT"), dtype="datetime64[ns]")
 
     pos_source = np.full((n,), "missing", dtype=object)
 
@@ -172,7 +225,16 @@ def add_surface_position_from_traj(
     pos_age_s = np.full((n,), np.nan, dtype=float)
 
     if tv.size == 0:
+        anchors_attendible = np.zeros((n,), dtype=bool)
+        if "valid_for_bvp" in ds_cycles.variables:
+            valid_for_bvp = np.asarray(ds_cycles["valid_for_bvp"].values).astype(bool) & anchors_attendible
+        else:
+            valid_for_bvp = anchors_attendible
         return ds_cycles.assign(
+            lat_surface_start=("cycle", lat_surface_start),
+            lon_surface_start=("cycle", lon_surface_start),
+            t_surface_start_fix=("cycle", t_surface_start_fix),
+            t_surface_end_fix=("cycle", t_surface_end_fix),
             lat_surface_end=("cycle", lat_out),
             lon_surface_end=("cycle", lon_out),
             pos_source=("cycle", pos_source.astype(str)),
@@ -185,61 +247,98 @@ def add_surface_position_from_traj(
             t_fix_before=("cycle", t_fix_before),
             t_fix_after=("cycle", t_fix_after),
             t_fix_nearest=("cycle", t_fix_nearest),
+            anchors_attendible=("cycle", anchors_attendible),
+            valid_for_bvp=("cycle", valid_for_bvp),
         )
+
+    tv_ns = tv.astype("datetime64[ns]").astype("int64")
+
+    t_prev_surface_end = np.full_like(t_target, np.datetime64("NaT"), dtype="datetime64[ns]")
+    if t_target.size > 1:
+        t_prev_surface_end[1:] = t_target[:-1]
 
     for i in range(n):
         tt_s = t_target_s[i]
-        if not np.isfinite(tt_s):
+        if np.isfinite(tt_s):
+            # nearest
+            k_near = int(np.nanargmin(np.abs(tv_s - tt_s)))
+            t_fix_nearest[i] = tv[k_near]
+            dt_nearest_s[i] = float(tv_s[k_near] - tt_s)
+
+            # bracket indices
+            j = int(np.searchsorted(tv_s, tt_s, side="left"))
+            j0 = j - 1
+            j1 = j
+
+            can_bracket = (j0 >= 0) and (j1 < tv_s.size) and np.isfinite(tv_s[j0]) and np.isfinite(tv_s[j1])
+            if can_bracket:
+                before_s = tv_s[j0]
+                after_s = tv_s[j1]
+                g = after_s - before_s
+
+                if (g >= 0) and (g <= cfg.max_gap_seconds):
+                    dtb = tt_s - before_s
+                    dta = after_s - tt_s
+
+                    # store bracket diagnostics
+                    t_fix_before[i] = tv[j0]
+                    t_fix_after[i] = tv[j1]
+                    dt_before_s[i] = float(dtb)
+                    dt_after_s[i] = float(dta)
+                    gap_s[i] = float(g)
+
+                    # interp only if both sides close enough
+                    if (dtb <= cfg.max_dt_before_for_interp_seconds) and (dta <= cfg.max_dt_after_for_interp_seconds):
+                        w = (tt_s - before_s) / g if g > 0 else 0.0
+                        lat_out[i] = (1 - w) * lv[j0] + w * lv[j1]
+                        lon_out[i] = (1 - w) * lov[j0] + w * lov[j1]
+                        pos_source[i] = "interp"
+                        # choose a representative "pos time" for the constraint: exact target time
+                        t_pos_used[i] = np.asarray(t_target[i]).astype("datetime64[ns]")
+                        pos_age_s[i] = 0.0
+                        continue
+
+            # fallback: nearest
+            if np.isfinite(dt_nearest_s[i]) and abs(dt_nearest_s[i]) <= cfg.max_abs_dt_nearest_seconds:
+                lat_out[i] = lv[k_near]
+                lon_out[i] = lov[k_near]
+                pos_source[i] = "nearest"
+                t_pos_used[i] = tv[k_near]
+                pos_age_s[i] = float(tv_s[k_near] - tt_s)
+            # else missing
+
+        if np.isnat(t_cycle_start[i]):
             continue
+        lat_s, lon_s, t_fix = _select_surface_before_fix(
+            tv,
+            lv,
+            lov,
+            tv_ns,
+            window_start=t_prev_surface_end[i],
+            window_end=t_cycle_start[i],
+            target_time=t_cycle_start[i],
+        )
+        lat_surface_start[i] = lat_s
+        lon_surface_start[i] = lon_s
+        t_surface_start_fix[i] = t_fix
 
-        # nearest
-        k_near = int(np.nanargmin(np.abs(tv_s - tt_s)))
-        t_fix_nearest[i] = tv[k_near]
-        dt_nearest_s[i] = float(tv_s[k_near] - tt_s)
-
-        # bracket indices
-        j = int(np.searchsorted(tv_s, tt_s, side="left"))
-        j0 = j - 1
-        j1 = j
-
-        can_bracket = (j0 >= 0) and (j1 < tv_s.size) and np.isfinite(tv_s[j0]) and np.isfinite(tv_s[j1])
-        if can_bracket:
-            before_s = tv_s[j0]
-            after_s = tv_s[j1]
-            g = after_s - before_s
-
-            if (g >= 0) and (g <= cfg.max_gap_seconds):
-                dtb = tt_s - before_s
-                dta = after_s - tt_s
-
-                # store bracket diagnostics
-                t_fix_before[i] = tv[j0]
-                t_fix_after[i] = tv[j1]
-                dt_before_s[i] = float(dtb)
-                dt_after_s[i] = float(dta)
-                gap_s[i] = float(g)
-
-                # interp only if both sides close enough
-                if (dtb <= cfg.max_dt_before_for_interp_seconds) and (dta <= cfg.max_dt_after_for_interp_seconds):
-                    w = (tt_s - before_s) / g if g > 0 else 0.0
-                    lat_out[i] = (1 - w) * lv[j0] + w * lv[j1]
-                    lon_out[i] = (1 - w) * lov[j0] + w * lov[j1]
-                    pos_source[i] = "interp"
-                    # choose a representative "pos time" for the constraint: exact target time
-                    t_pos_used[i] = np.asarray(t_target[i]).astype("datetime64[ns]")
-                    pos_age_s[i] = 0.0
-                    continue
-
-        # fallback: nearest
-        if np.isfinite(dt_nearest_s[i]) and abs(dt_nearest_s[i]) <= cfg.max_abs_dt_nearest_seconds:
-            lat_out[i] = lv[k_near]
-            lon_out[i] = lov[k_near]
-            pos_source[i] = "nearest"
-            t_pos_used[i] = tv[k_near]
-            pos_age_s[i] = float(tv_s[k_near] - tt_s)
-        # else missing
+    t_surface_end_fix = t_pos_used.copy()
+    anchors_attendible = (
+        np.isfinite(lat_surface_start)
+        & np.isfinite(lon_surface_start)
+        & np.isfinite(lat_out)
+        & np.isfinite(lon_out)
+    )
+    if "valid_for_bvp" in ds_cycles.variables:
+        valid_for_bvp = np.asarray(ds_cycles["valid_for_bvp"].values).astype(bool) & anchors_attendible
+    else:
+        valid_for_bvp = anchors_attendible
 
     return ds_cycles.assign(
+        lat_surface_start=("cycle", lat_surface_start),
+        lon_surface_start=("cycle", lon_surface_start),
+        t_surface_start_fix=("cycle", t_surface_start_fix),
+        t_surface_end_fix=("cycle", t_surface_end_fix),
         lat_surface_end=("cycle", lat_out),
         lon_surface_end=("cycle", lon_out),
         pos_source=("cycle", pos_source.astype(str)),
@@ -252,4 +351,6 @@ def add_surface_position_from_traj(
         t_fix_before=("cycle", t_fix_before),
         t_fix_after=("cycle", t_fix_after),
         t_fix_nearest=("cycle", t_fix_nearest),
+        anchors_attendible=("cycle", anchors_attendible),
+        valid_for_bvp=("cycle", valid_for_bvp),
     )

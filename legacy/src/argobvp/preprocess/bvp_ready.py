@@ -133,11 +133,15 @@ def build_bvp_ready_dataset(
         "t_park_end",
         "valid_for_bvp",
         "parking_n_obs",
+        "lat_surface_start",
+        "lon_surface_start",
         "lat_surface_end",
         "lon_surface_end",
         "pos_age_s",
         "pos_source",
         "t_surface_end",
+        "t_surface_start_fix",
+        "t_surface_end_fix",
     ] + n_vars + att_vars
     _require_vars(ds_continuous, ["time", "pres", "cycle_number", acc_n_var, acc_e_var], "ds_continuous")
     _require_vars(ds_cycles, required_cycles, "ds_cycles")
@@ -154,6 +158,16 @@ def build_bvp_ready_dataset(
         )
 
     valid_mask = ds_cycles["valid_for_bvp"].astype(bool)
+    anchors_ok = (
+        np.isfinite(ds_cycles["lat_surface_start"].values)
+        & np.isfinite(ds_cycles["lon_surface_start"].values)
+        & np.isfinite(ds_cycles["lat_surface_end"].values)
+        & np.isfinite(ds_cycles["lon_surface_end"].values)
+    )
+    n_missing_anchors = int(np.sum(valid_mask & ~anchors_ok))
+    if n_missing_anchors > 0:
+        print(f"[bvp_ready] cycles skipped by anchor availability: {n_missing_anchors} / {int(valid_mask.size)}")
+    valid_mask = valid_mask & anchors_ok
     ds_cyc_valid = ds_cycles.where(valid_mask, drop=True)
     cycle_numbers_all = np.asarray(ds_cyc_valid["cycle_number"].values).astype(int)
 
@@ -182,9 +196,13 @@ def build_bvp_ready_dataset(
         "t_ascent_start": [],
         "t_surface_start": [],
         "t_surface_end": [],
+        "t_surface_start_fix": [],
+        "t_surface_end_fix": [],
         "t_park_start": [],
         "t_park_end": [],
     }
+    cyc_lat_surface_start: List[float] = []
+    cyc_lon_surface_start: List[float] = []
     cyc_lat_surface_end: List[float] = []
     cyc_lon_surface_end: List[float] = []
     cyc_pos_age_s: List[float] = []
@@ -259,6 +277,8 @@ def build_bvp_ready_dataset(
             cyc_meta_times[k].append(
                 np.asarray(row[k].values).astype("datetime64[ns]") if k in row else np.datetime64("NaT")
             )
+        cyc_lat_surface_start.append(float(row["lat_surface_start"].values))
+        cyc_lon_surface_start.append(float(row["lon_surface_start"].values))
         cyc_lat_surface_end.append(float(row["lat_surface_end"].values))
         cyc_lon_surface_end.append(float(row["lon_surface_end"].values))
         cyc_pos_age_s.append(float(row["pos_age_s"].values))
@@ -286,6 +306,8 @@ def build_bvp_ready_dataset(
             row_size=("cycle", np.asarray(row_size, dtype=int)),
             t0=("cycle", np.asarray(row_t0, dtype="datetime64[ns]")),
             t1=("cycle", np.asarray(row_t1, dtype="datetime64[ns]")),
+            lat_surface_start=("cycle", np.asarray(cyc_lat_surface_start, dtype=float)),
+            lon_surface_start=("cycle", np.asarray(cyc_lon_surface_start, dtype=float)),
             lat_surface_end=("cycle", np.asarray(cyc_lat_surface_end, dtype=float)),
             lon_surface_end=("cycle", np.asarray(cyc_lon_surface_end, dtype=float)),
             pos_age_s=("cycle", np.asarray(cyc_pos_age_s, dtype=float)),
@@ -379,6 +401,42 @@ def _print_selection_summary(ds_bvp: xr.Dataset) -> None:
         print(f"  phase={u:>18s} : {int(c)} samples")
 
 
+def _print_anchor_summary(ds_bvp: xr.Dataset, n_show: int = 3) -> None:
+    n_cycles = int(ds_bvp.sizes.get("cycle", 0))
+    if n_cycles == 0:
+        return
+
+    lat_start = np.asarray(ds_bvp["lat_surface_start"].values, dtype=float)
+    lon_start = np.asarray(ds_bvp["lon_surface_start"].values, dtype=float)
+    lat_end = np.asarray(ds_bvp["lat_surface_end"].values, dtype=float)
+    lon_end = np.asarray(ds_bvp["lon_surface_end"].values, dtype=float)
+    anchors_ok = np.isfinite(lat_start) & np.isfinite(lon_start) & np.isfinite(lat_end) & np.isfinite(lon_end)
+    print(f"[bvp_ready] cycles with both anchors: {int(np.sum(anchors_ok))} / {n_cycles}")
+
+    if n_show <= 0:
+        return
+
+    n_show = min(n_show, n_cycles)
+    cycles = np.asarray(ds_bvp["cycle_number"].values).astype(int)
+    has_t_start = "t_surface_start_fix" in ds_bvp.variables
+    has_t_end = "t_surface_end_fix" in ds_bvp.variables
+
+    print(f"[bvp_ready] first {n_show} cycles anchors:")
+    for i in range(n_show):
+        row = ds_bvp.isel(cycle=i)
+        t_start = row["t_surface_start_fix"].values if has_t_start else np.datetime64("NaT")
+        t_end = row["t_surface_end_fix"].values if has_t_end else np.datetime64("NaT")
+        lat_s = float(row["lat_surface_start"].values) if np.isfinite(row["lat_surface_start"].values) else np.nan
+        lon_s = float(row["lon_surface_start"].values) if np.isfinite(row["lon_surface_start"].values) else np.nan
+        lat_e = float(row["lat_surface_end"].values) if np.isfinite(row["lat_surface_end"].values) else np.nan
+        lon_e = float(row["lon_surface_end"].values) if np.isfinite(row["lon_surface_end"].values) else np.nan
+        print(
+            f"  cyc={int(cycles[i])} "
+            f"start=({lat_s:.6f},{lon_s:.6f}) t_start_fix={str(t_start)} "
+            f"end=({lat_e:.6f},{lon_e:.6f}) t_end_fix={str(t_end)}"
+        )
+
+
 def main() -> None:
     args = _build_parser().parse_args()
     cfg = BVPReadyConfig(
@@ -413,6 +471,7 @@ def main() -> None:
     out_path = _derive_out_path(args.out, platform)
     write_netcdf(ds_bvp, out_path)
     print(f"OK: wrote BVP-ready file to {out_path}")
+    _print_anchor_summary(ds_bvp, n_show=3)
 
     ds_cont.close()
     ds_cyc.close()
