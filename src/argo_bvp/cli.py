@@ -7,6 +7,8 @@ from itertools import product
 from dataclasses import replace
 from pathlib import Path
 
+import numpy as np
+
 from .instruments import INSTRUMENTS
 from .synth.experiment_params import DEFAULT_EXPERIMENT
 from .synth.generate_synthetic_raw import generate_synthetic_raw
@@ -98,6 +100,9 @@ def _build_parser() -> argparse.ArgumentParser:
     sweep.add_argument("--instrument", type=str, default="synth_v1")
     sweep.add_argument("--window-index", type=int, default=0)
     sweep.add_argument("--method", type=str, choices=["trap", "rect"], default="trap")
+
+    analyze = subparsers.add_parser("analyze-sweep", help="Analyze sweep outputs")
+    analyze.add_argument("--outdir", type=Path, default=Path("outputs/sweep"))
 
     return parser
 
@@ -250,6 +255,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Sweep completed: {completed} experiment(s) in {outdir}")
         return 0
 
+    if args.command == "analyze-sweep":
+        from .analysis.sweep_analysis import (
+            build_metrics_table,
+            discover_sweep_runs,
+            plot_heatmaps,
+            plot_trajectories_by_freq,
+        )
+
+        runs = discover_sweep_runs(args.outdir)
+        df = build_metrics_table(args.outdir)
+        plot_heatmaps(df, args.outdir)
+        plot_trajectories_by_freq(df, runs, args.outdir)
+        _print_metric_summary(df)
+        return 0
+
     parser.error(f"Unknown command: {args.command}")
     return 1
 
@@ -283,6 +303,29 @@ def _format_tag(value: float, decimals: int) -> str:
     if text == "-0":
         text = "0"
     return text.replace(".", "p")
+
+
+def _print_metric_summary(df) -> None:
+    if df.empty:
+        print("No sweep runs found for summary.")
+        return
+    df_valid = df[np.isclose(df["dt_descent_s"], df["dt_ascent_s"])]
+    if df_valid.empty:
+        df_valid = df
+
+    metrics = ["rms_underwater_m", "err_park_start_m"]
+    for metric in metrics:
+        df_metric = df_valid[np.isfinite(df_valid[metric])]
+        if df_metric.empty:
+            continue
+        best = df_metric.nsmallest(5, metric)
+        worst = df_metric.nlargest(5, metric)
+        print(f"Top 5 best by {metric}:")
+        for _, row in best.iterrows():
+            print(f"  {row['tag']} W{int(row['window_index']):03d} -> {row[metric]:.3f} m")
+        print(f"Top 5 worst by {metric}:")
+        for _, row in worst.iterrows():
+            print(f"  {row['tag']} W{int(row['window_index']):03d} -> {row[metric]:.3f} m")
 
 
 if __name__ == "__main__":
