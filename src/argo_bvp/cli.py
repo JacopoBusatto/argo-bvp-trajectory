@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from itertools import product
 from dataclasses import replace
 from pathlib import Path
 
@@ -85,6 +86,18 @@ def _build_parser() -> argparse.ArgumentParser:
     integrate.add_argument("--cycle", type=Path, required=True)
     integrate.add_argument("--outdir", type=Path, required=True)
     integrate.add_argument("--method", type=str, choices=["trap", "rect"], default="trap")
+
+    sweep = subparsers.add_parser("sweep", help="Run sensitivity sweep: synth -> preprocess -> integrate")
+    sweep.add_argument("--outdir", type=Path, default=Path("outputs/sweep"))
+    sweep.add_argument("--dt-descent-s-list", type=str, required=True)
+    sweep.add_argument("--dt-park-s-list", type=str, required=True)
+    sweep.add_argument("--dt-ascent-s-list", type=str, required=True)
+    sweep.add_argument("--acc-sigma-ms2-list", type=str, required=True)
+    sweep.add_argument("--park-hours-list", type=str, required=True)
+    sweep.add_argument("--seed", type=int, default=DEFAULT_EXPERIMENT.seed)
+    sweep.add_argument("--instrument", type=str, default="synth_v1")
+    sweep.add_argument("--window-index", type=int, default=0)
+    sweep.add_argument("--method", type=str, choices=["trap", "rect"], default="trap")
 
     return parser
 
@@ -170,8 +183,106 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    if args.command == "sweep":
+        from .run_integrate import integrate_cycle_file
+        from .run_preprocess import build_cycle_file, derive_base_from_traj_path
+
+        if args.instrument not in INSTRUMENTS:
+            raise KeyError(f"Unknown instrument: {args.instrument}")
+        instrument = INSTRUMENTS[args.instrument]
+
+        dt_descent_list = _parse_float_list(args.dt_descent_s_list)
+        dt_park_list = _parse_float_list(args.dt_park_s_list)
+        dt_ascent_list = _parse_float_list(args.dt_ascent_s_list)
+        acc_sigma_list = _parse_float_list(args.acc_sigma_ms2_list)
+        park_hours_list = _parse_float_list(args.park_hours_list)
+
+        outdir = Path(args.outdir)
+        outdir.mkdir(parents=True, exist_ok=True)
+
+        completed = 0
+        for run_index, (dt_desc, dt_park, dt_asc, acc_sigma, park_hours) in enumerate(
+            product(
+                dt_descent_list,
+                dt_park_list,
+                dt_ascent_list,
+                acc_sigma_list,
+                park_hours_list,
+            )
+        ):
+            cycle_hours = _compute_cycle_hours(park_hours)
+            params = replace(
+                DEFAULT_EXPERIMENT,
+                cycle_hours=cycle_hours,
+                dt_descent_s=dt_desc,
+                dt_park_s=dt_park,
+                dt_ascent_s=dt_asc,
+                acc_sigma_ms2=acc_sigma,
+                park_hours=park_hours,
+                seed=args.seed + run_index,
+            )
+            tag = _build_synth_tag(params)
+            exp_outdir = outdir / tag
+            exp_outdir.mkdir(parents=True, exist_ok=True)
+
+            generate_synthetic_raw(exp_outdir, params, instrument)
+
+            traj_paths = sorted(exp_outdir.glob("*_TRAJ.nc"))
+            aux_paths = sorted(exp_outdir.glob("*_AUX.nc"))
+            if len(traj_paths) != 1 or len(aux_paths) != 1:
+                raise FileNotFoundError("Expected exactly one *_TRAJ.nc and one *_AUX.nc")
+            traj_path = traj_paths[0]
+            aux_path = aux_paths[0]
+
+            base = derive_base_from_traj_path(traj_path)
+            cycle_path = exp_outdir / f"CYCLE_{base}_W{args.window_index:03d}.nc"
+
+            build_cycle_file(
+                traj_path=traj_path,
+                aux_path=aux_path,
+                out_path=cycle_path,
+                window_index=args.window_index,
+                instrument=args.instrument,
+            )
+            integrate_cycle_file(cycle_path, exp_outdir, method=args.method)
+            completed += 1
+
+        print(f"Sweep completed: {completed} experiment(s) in {outdir}")
+        return 0
+
     parser.error(f"Unknown command: {args.command}")
     return 1
+
+
+def _parse_float_list(values: str) -> list[float]:
+    items = [item.strip() for item in values.split(",") if item.strip()]
+    if not items:
+        raise ValueError("List must contain at least one value")
+    return [float(item) for item in items]
+
+
+def _compute_cycle_hours(park_hours: float) -> float:
+    surface_hours = (DEFAULT_EXPERIMENT.surface1_minutes + DEFAULT_EXPERIMENT.surface2_minutes) / 60.0
+    return surface_hours + DEFAULT_EXPERIMENT.descent_hours + float(park_hours) + DEFAULT_EXPERIMENT.ascent_hours
+
+
+def _build_synth_tag(params: object) -> str:
+    cycle = _format_tag(params.cycle_hours, decimals=2)
+    dt_descent = _format_tag(params.dt_descent_s, decimals=2)
+    dt_park = _format_tag(params.dt_park_s, decimals=2)
+    dt_ascent = _format_tag(params.dt_ascent_s, decimals=2)
+    noise = _format_tag(params.acc_sigma_ms2, decimals=6)
+    return f"SYNTH_CY{cycle}h_d{dt_descent}s_p{dt_park}s_a{dt_ascent}s_n{noise}"
+
+
+def _format_tag(value: float, decimals: int) -> str:
+    if value == round(value):
+        return str(int(round(value)))
+    fmt = f"{{:.{decimals}f}}"
+    text = fmt.format(value).rstrip("0").rstrip(".")
+    if text == "-0":
+        text = "0"
+    return text.replace(".", "p")
 
 
 if __name__ == "__main__":

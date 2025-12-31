@@ -41,10 +41,10 @@ def generate_synthetic_raw(
     traj.to_netcdf(traj_path, engine="h5netcdf")
     aux.to_netcdf(aux_path, engine="h5netcdf")
 
-    plan_path = outdir / f"{base}_plan.png"
-    xyz_path = outdir / f"{base}_3d.png"
-    acc_path = outdir / f"{base}_acc.png"
-    depth_path = outdir / f"{base}_depth.png"
+    plan_path = outdir / f"TRUTH_{base}_plan.png"
+    xyz_path = outdir / f"TRUTH_{base}_3d.png"
+    acc_path = outdir / f"TRUTH_{base}_acc.png"
+    depth_path = outdir / f"TRUTH_{base}_depth.png"
 
     _plot_plan_view(truth, plan_path)
     _plot_3d_view(truth, xyz_path)
