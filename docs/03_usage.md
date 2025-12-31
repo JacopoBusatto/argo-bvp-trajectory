@@ -1,3 +1,55 @@
+# Installation and setup
+
+This section explains how to install the project in a clean environment.
+All commands should be run from the repository root.
+
+## 1) Install Python
+
+Use Python 3.10 or 3.11 (the project requires >=3.10,<3.12).
+
+Check your version:
+```bash
+python --version
+```
+
+## 2) Create and activate a virtual environment
+
+Windows (PowerShell):
+```bash
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+macOS/Linux:
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+## 3) Install the project
+
+Upgrade pip:
+```bash
+python -m pip install --upgrade pip
+```
+
+Install the core package (CLI + dependencies):
+```bash
+python -m pip install -e .
+```
+
+Optional extras:
+- For sweep analysis and data handling (pandas):
+  ```bash
+  python -m pip install -e ".[preprocess]"
+  ```
+- For running tests (pytest):
+  ```bash
+  python -m pip install -e ".[dev]"
+  ```
+
+You can now use the CLI commands below.
+
 # CLI Usage
 
 This project provides a single CLI entrypoint:
@@ -101,7 +153,7 @@ python -m argo_bvp.cli preprocess \
 --out PATH
 ```
 
-NOTE (IT): se `--out` non è specificato, il nome è derivato dal TRAJ come
+NOTE (IT): se `--out` non e specificato, il nome e derivato dal TRAJ come
 `CYCLE_<tag>_W{window:03d}.nc`.
 
 ## 3) `integrate`
@@ -134,7 +186,7 @@ python -m argo_bvp.cli integrate \
 
 **Purpose**  
 Run a grid of synthetic experiments and, for each case, execute:
-synth → preprocess → integrate.
+synth -> preprocess -> integrate.
 
 **Example command**
 ```bash
