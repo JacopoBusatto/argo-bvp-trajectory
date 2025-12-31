@@ -1,0 +1,1878 @@
+###################### AUX FILE #######################
+>>> import xarray as xr
+>>> aux=xr.open_dataset(r"C:\Users\Jacopo\CNR\GIOVANNI LA FORGIA - IMU\POLIMNIA\4903848_Rtraj_aux.nc")
+>>> aux
+<xarray.Dataset> Size: 486MB
+Dimensions:                                  (N_PARAM: 52,
+                                              N_MEASUREMENT: 70493,
+                                              N_VALUES5: 5, N_VALUES100: 100,
+                                              N_VALUES18: 18, N_VALUES40: 40,
+                                              N_CYCLE: 38, N_HISTORY: 13)
+Dimensions without coordinates: N_PARAM, N_MEASUREMENT, N_VALUES5, N_VALUES100,
+                                N_VALUES18, N_VALUES40, N_CYCLE, N_HISTORY
+Data variables: (12/154)
+    DATA_TYPE                                object 8B ...
+    FORMAT_VERSION                           object 8B ...
+    REFERENCE_DATE_TIME                      object 8B ...
+    DATE_CREATION                            object 8B ...
+    DATE_UPDATE                              object 8B ...
+    PLATFORM_NUMBER                          object 8B ...
+    ...                                       ...
+    HISTORY_PARAMETER                        (N_HISTORY) object 104B ...
+    HISTORY_PREVIOUS_VALUE                   (N_HISTORY) float64 104B ...
+    HISTORY_INDEX_DIMENSION                  (N_HISTORY) object 104B ...
+    HISTORY_START_INDEX                      (N_HISTORY) float64 104B ...
+    HISTORY_STOP_INDEX                       (N_HISTORY) float64 104B ...
+    HISTORY_QCTEST                           (N_HISTORY) object 104B ...
+Attributes:
+    title:                        Argo float trajectory auxiliary data file
+    institution:                  CORIOLIS
+    source:                       Argo float
+    history:                      2025-10-27T15:34:13Z creation; 2025-12-14T1...
+    references:                   http://www.argodatamgt.org/Documentation
+    user_manual_version:          1.0
+    Conventions:                  CF-1.6 Coriolis-Argo-Aux-1.0
+    featureType:                  trajectoryCoriolisAux
+    decoder_version:              CODA_082f
+    id:                           https://doi.org/10.17882/42182
+    comment_on_resolution:        PRES variable resolutions depend on measure...
+    comment_on_measurement_code:  Meaning of some specific measurement codes ...
+>>> aux.variables
+Frozen({'DATA_TYPE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Data type
+    conventions:  Reference table AUX_1, 'FORMAT_VERSION': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  File format version, 'REFERENCE_DATE_TIME': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Date of reference for Julian days
+    conventions:  YYYYMMDDHHMISS, 'DATE_CREATION': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Date of file creation
+    conventions:  YYYYMMDDHHMISS, 'DATE_UPDATE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Date of update of this file
+    conventions:  YYYYMMDDHHMISS, 'PLATFORM_NUMBER': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Float unique identifier
+    conventions:  WMO float identifier : A9IIIII, 'PROJECT_NAME': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Name of the project, 'PI_NAME': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Name of the principal investigator, 'TRAJECTORY_PARAMETERS': <xarray.Variable (N_PARAM: 52)> Size: 416B
+[52 values with dtype=object]
+Attributes:
+    long_name:    List of available parameters for the station
+    conventions:  Reference table AUX_3a, 'DATA_CENTRE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Data centre in charge of float data processing
+    conventions:  Argo reference table 4, 'DATA_STATE_INDICATOR': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Degree of processing the data have passed through
+    conventions:  Argo reference table 6, 'PLATFORM_TYPE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Type of float
+    conventions:  Argo reference table 23, 'FLOAT_SERIAL_NO': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Serial number of the float, 'FIRMWARE_VERSION': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Instrument firmware version, 'WMO_INST_TYPE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Coded instrument type
+    conventions:  Argo reference table 8, 'JULD': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Julian day (UTC) of each measurement relative to REFERENC...
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05
+    axis:           T, 'JULD_STATUS': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    Status of the date and time
+    conventions:  Argo reference table 19, 'JULD_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    Quality on date and time
+    conventions:  Argo reference table 2, 'JULD_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Adjusted julian day (UTC) of each measurement relative to...
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05
+    axis:           T, 'JULD_ADJUSTED_STATUS': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    Status of the JULD_ADJUSTED date
+    conventions:  Argo reference table 19, 'JULD_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    Quality on adjusted date and time
+    conventions:  Argo reference table 2, 'CYCLE_NUMBER': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=float64]
+Attributes:
+    long_name:    Float cycle number of the measurement
+    conventions:  0...N, 0 : launch cycle, 1 : first complete cycle, 'CYCLE_NUMBER_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=float64]
+Attributes:
+    long_name:    Adjusted float cycle number of the measurement
+    conventions:  0...N, 0 : launch cycle, 1 : first complete cycle, 'MEASUREMENT_CODE': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=float64]
+Attributes:
+    long_name:    Flag referring to a measurement event in the cycle
+    conventions:  Argo reference table 15, 'PRES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:              Sea water pressure, equals 0 at sea-level
+    standard_name:          sea_water_pressure
+    units:                  decibar
+    valid_min:              0.0
+    valid_max:              12000.0
+    C_format:               %8.2f
+    FORTRAN_format:         F8.2
+    resolution:             0.01
+    comment_on_resolution:  PRES resolution is 0.01 dbar for CTD sensor and 0...
+    axis:                   Z, 'PRES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PRES_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:              Sea water pressure, equals 0 at sea-level
+    standard_name:          sea_water_pressure
+    units:                  decibar
+    valid_min:              0.0
+    valid_max:              12000.0
+    C_format:               %8.2f
+    FORTRAN_format:         F8.2
+    resolution:             0.01
+    comment_on_resolution:  PRES_ADJUSTED resolution is 0.01 dbar for CTD sen...
+    axis:                   Z, 'PRES_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PRES_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           decibar
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'TEMP_COUNT_INERTIAL': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Temperature of the INERTIAL sensor
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'TEMP_COUNT_INERTIAL_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'LINEAR_ACCELERATION_COUNT_X': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB    
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Linear acceleration along the X axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'LINEAR_ACCELERATION_COUNT_X_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'LINEAR_ACCELERATION_COUNT_Y': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB    
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Linear acceleration along the Y axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'LINEAR_ACCELERATION_COUNT_Y_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'LINEAR_ACCELERATION_COUNT_Z': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB    
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Linear acceleration along the Z axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'LINEAR_ACCELERATION_COUNT_Z_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'ANGULAR_RATE_COUNT_X': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Angular rate along the X axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'ANGULAR_RATE_COUNT_X_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'ANGULAR_RATE_COUNT_Y': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Angular rate along the Y axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'ANGULAR_RATE_COUNT_Y_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'ANGULAR_RATE_COUNT_Z': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Angular rate along the Z axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'ANGULAR_RATE_COUNT_Z_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'MAGNETIC_FIELD_COUNT_X': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Magnetic field along the X axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'MAGNETIC_FIELD_COUNT_X_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'MAGNETIC_FIELD_COUNT_Y': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Magnetic field along the Y axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'MAGNETIC_FIELD_COUNT_Y_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'MAGNETIC_FIELD_COUNT_Z': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Magnetic field along the Z axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'MAGNETIC_FIELD_COUNT_Z_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BLACK_NB_IMAGE_PARTICLES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB       
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Number of uvp images without light in the slice
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'BLACK_NB_IMAGE_PARTICLES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BLACK_TEMP_PARTICLES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Internal temperature of the UVP6 sensor without light
+    units:           degree_Celsius
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      1e-04, 'BLACK_TEMP_PARTICLES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BLACK_NB_SIZE_SPECTRA_PARTICLES': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES5: 5)> Size: 3MB
+[352465 values with dtype=float64]
+Attributes:
+    long_name:       Number of particles without light per class of the slice
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'BLACK_NB_SIZE_SPECTRA_PARTICLES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_DOWN_IRR_INTEGRATION_TIME': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Integration time of the radiometer
+    units:           msec
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'RADIOMETER_DOWN_IRR_INTEGRATION_TIME_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB        
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_DOWN_IRR_PRE_PRES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB   
+[70493 values with dtype=float32]
+Attributes:
+    units:           decibar
+    C_format:        %7.2f
+    FORTRAN_format:  F7.2
+    resolution:      0.01, 'RADIOMETER_DOWN_IRR_PRE_PRES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_DOWN_IRR_POST_PRES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB  
+[70493 values with dtype=float32]
+Attributes:
+    units:           decibar
+    C_format:        %7.2f
+    FORTRAN_format:  F7.2
+    resolution:      0.01, 'RADIOMETER_DOWN_IRR_POST_PRES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_DOWN_IRR_PRE_INCLINATION': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       The inclination angle (0-360) taken before the light mea...
+    units:           degree
+    valid_min:       0.0
+    valid_max:       360.0
+    C_format:        %.5f
+    FORTRAN_format:  F.5
+    resolution:      1e-05, 'RADIOMETER_DOWN_IRR_PRE_INCLINATION_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB       
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_DOWN_IRR_POST_INCLINATION': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       The inclination angle (0-360) taken after the light meas...
+    units:           degree
+    valid_min:       0.0
+    valid_max:       360.0
+    C_format:        %.5f
+    FORTRAN_format:  F.5
+    resolution:      1e-05, 'RADIOMETER_DOWN_IRR_POST_INCLINATION_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB      
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_DOWN_IRR_DARK_AVERAGE': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'RADIOMETER_DOWN_IRR_DARK_AVERAGE_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RAW_DOWNWELLING_IRRADIANCE': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 56MB
+[7049300 values with dtype=float64]
+Attributes:
+    long_name:       Raw downwelling irradiance spectrum
+    units:           count
+    C_format:        %9.1f
+    FORTRAN_format:  F9.1
+    resolution:      1.0, 'RAW_DOWNWELLING_IRRADIANCE_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'DOWN_IRRADIANCE_SPECTRUM': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Downwelling irradiance spectrum
+    units:           W/m^2/nm
+    C_format:        %.6f
+    FORTRAN_format:  F.6
+    resolution:      1e-06, 'DOWN_IRRADIANCE_SPECTRUM_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'DOWN_IRRADIANCE_SPECTRUM_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Downwelling irradiance spectrum
+    units:           W/m^2/nm
+    C_format:        %.6f
+    FORTRAN_format:  F.6
+    resolution:      1e-06, 'DOWN_IRRADIANCE_SPECTRUM_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'DOWN_IRRADIANCE_SPECTRUM_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           W/m^2/nm
+    C_format:        %.6f
+    FORTRAN_format:  F.6
+    resolution:      1e-06, 'DOWN_IRRADIANCE_SPECTRUM_WAVELENGTHS': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Wavelength associated to downwelling irradiance spectrum
+    units:           nm
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'DOWN_IRRADIANCE_SPECTRUM_WAVELENGTHS_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB      
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_UP_RAD_INTEGRATION_TIME': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Integration time of the radiometer
+    units:           msec
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'RADIOMETER_UP_RAD_INTEGRATION_TIME_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_UP_RAD_PRE_PRES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB     
+[70493 values with dtype=float32]
+Attributes:
+    units:           decibar
+    C_format:        %7.2f
+    FORTRAN_format:  F7.2
+    resolution:      0.01, 'RADIOMETER_UP_RAD_PRE_PRES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_UP_RAD_POST_PRES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB    
+[70493 values with dtype=float32]
+Attributes:
+    units:           decibar
+    C_format:        %7.2f
+    FORTRAN_format:  F7.2
+    resolution:      0.01, 'RADIOMETER_UP_RAD_POST_PRES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_UP_RAD_PRE_INCLINATION': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       The inclination angle (0-360) taken before the light mea...
+    units:           degree
+    valid_min:       0.0
+    valid_max:       360.0
+    C_format:        %.5f
+    FORTRAN_format:  F.5
+    resolution:      1e-05, 'RADIOMETER_UP_RAD_PRE_INCLINATION_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_UP_RAD_POST_INCLINATION': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       The inclination angle (0-360) taken after the light meas...
+    units:           degree
+    valid_min:       0.0
+    valid_max:       360.0
+    C_format:        %.5f
+    FORTRAN_format:  F.5
+    resolution:      1e-05, 'RADIOMETER_UP_RAD_POST_INCLINATION_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB        
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RADIOMETER_UP_RAD_DARK_AVERAGE': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB 
+[70493 values with dtype=float32]
+Attributes:
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'RADIOMETER_UP_RAD_DARK_AVERAGE_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'RAW_UPWELLING_RADIANCE': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Raw upwelling radiance spectrum
+    units:           count
+    C_format:        %9.1f
+    FORTRAN_format:  F9.1
+    resolution:      1.0, 'RAW_UPWELLING_RADIANCE_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'UP_RADIANCE_SPECTRUM': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Upwelling radiance spectrum
+    units:           W/m^2/nm
+    C_format:        %.6f
+    FORTRAN_format:  F.6
+    resolution:      1e-06, 'UP_RADIANCE_SPECTRUM_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'UP_RADIANCE_SPECTRUM_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Upwelling radiance spectrum
+    units:           W/m^2/nm
+    C_format:        %.6f
+    FORTRAN_format:  F.6
+    resolution:      1e-06, 'UP_RADIANCE_SPECTRUM_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'UP_RADIANCE_SPECTRUM_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           W/m^2/nm
+    C_format:        %.6f
+    FORTRAN_format:  F.6
+    resolution:      1e-06, 'UP_RADIANCE_SPECTRUM_WAVELENGTHS': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES100: 100)> Size: 28MB
+[7049300 values with dtype=float32]
+Attributes:
+    long_name:       Wavelength associated to upwelling radiance spectrum
+    units:           nm
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'UP_RADIANCE_SPECTRUM_WAVELENGTHS_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'NB_IMAGE_PARTICLES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Number of uvp images in the slice
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'NB_IMAGE_PARTICLES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'TEMP_PARTICLES': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Average uvp temperature of the slice
+    units:           degree_Celsius
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'TEMP_PARTICLES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'NB_SIZE_SPECTRA_PARTICLES': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES18: 18)> Size: 10MB
+[1268874 values with dtype=float64]
+Attributes:
+    long_name:       Number of particles per size class of the slice
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'NB_SIZE_SPECTRA_PARTICLES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'GREY_SIZE_SPECTRA_PARTICLES': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES18: 18)> Size: 10MB
+[1268874 values with dtype=float64]
+Attributes:
+    long_name:       Average grey level per particle per size class
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'GREY_SIZE_SPECTRA_PARTICLES_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CONCENTRATION_LPM': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES18: 18)> Size: 5MB
+[1268874 values with dtype=float32]
+Attributes:
+    long_name:       Concentration of particles per size class in the slice
+    units:           #/L
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'CONCENTRATION_LPM_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'NB_IMAGE_CATEGORY': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Number of uvp images in the slice
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'NB_IMAGE_CATEGORY_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'NB_CATEGORY': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Number of different taxonomy categories found in the record
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'NB_CATEGORY_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'INDEX_CATEGORY': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES40: 40)> Size: 11MB  
+[2819720 values with dtype=float32]
+Attributes:
+    long_name:       Index of the taxonomy category
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'INDEX_CATEGORY_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'NB_OBJECT_CATEGORY': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES40: 40)> Size: 11MB
+[2819720 values with dtype=float32]
+Attributes:
+    long_name:       Number of objects of a specific category in the slice
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'NB_OBJECT_CATEGORY_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'OBJECT_MEAN_VOLUME_CATEGORY': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES40: 40)> Size: 11MB
+[2819720 values with dtype=float32]
+Attributes:
+    long_name:       Average volume per object of a specific category in the ...
+    units:           pixel^3
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'OBJECT_MEAN_VOLUME_CATEGORY_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'OBJECT_MEAN_GREY_LEVEL_CATEGORY': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES40: 40)> Size: 23MB
+[2819720 values with dtype=float64]
+Attributes:
+    long_name:       Average grey level per object of a specific category in ...
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'OBJECT_MEAN_GREY_LEVEL_CATEGORY_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CONCENTRATION_CATEGORY': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES40: 40)> Size: 11MB
+[2819720 values with dtype=float32]
+Attributes:
+    long_name:       Concentration of objects per category in the slice
+    units:           #/L
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'CONCENTRATION_CATEGORY_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BIOVOLUME_CATEGORY': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES40: 40)> Size: 11MB
+[2819720 values with dtype=float32]
+Attributes:
+    long_name:       Biovolume of objects per category in the slice
+    units:           micrometer^3/ml
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'BIOVOLUME_CATEGORY_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'ECOTAXA_CATEGORY_ID': <xarray.Variable (N_MEASUREMENT: 70493, N_VALUES40: 40)> Size: 23MB
+[2819720 values with dtype=float64]
+Attributes:
+    long_name:       Id of the taxonomy category
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1, 'ECOTAXA_CATEGORY_ID_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'SURFACE_LINEAR_ACCELERATION_COUNT_X': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Linear acceleration at the surface along the X axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'SURFACE_LINEAR_ACCELERATION_COUNT_X_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'SURFACE_LINEAR_ACCELERATION_COUNT_Y': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Linear acceleration at the surface along the Y axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'SURFACE_LINEAR_ACCELERATION_COUNT_Y_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'SURFACE_LINEAR_ACCELERATION_COUNT_Z': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Linear acceleration at the surface along the Z axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'SURFACE_LINEAR_ACCELERATION_COUNT_Z_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'SURFACE_MAGNETIC_FIELD_COUNT_X': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB 
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Magnetic field at the surface along the X axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'SURFACE_MAGNETIC_FIELD_COUNT_X_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'SURFACE_MAGNETIC_FIELD_COUNT_Y': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB 
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Magnetic field at the surface along the Y axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'SURFACE_MAGNETIC_FIELD_COUNT_Y_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'SURFACE_MAGNETIC_FIELD_COUNT_Z': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 282kB 
+[70493 values with dtype=float32]
+Attributes:
+    long_name:       Magnetic field at the surface along the Z axis
+    units:           count
+    C_format:        %d
+    FORTRAN_format:  I
+    resolution:      1.0, 'SURFACE_MAGNETIC_FIELD_COUNT_Z_QC': <xarray.Variable (N_MEASUREMENT: 70493)> Size: 564kB
+[70493 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CONFIG_MISSION_NUMBER': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=float64]
+Attributes:
+    long_name:    Unique number denoting the missions performed by the float
+    conventions:  1...N, 1 : first complete mission, 'CYCLE_NUMBER_INDEX': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=float64]
+Attributes:
+    long_name:    Cycle number that corresponds to the current index
+    conventions:  0...N, 0 : launch cycle, 1 : first complete cycle, 'CYCLE_NUMBER_INDEX_ADJUSTED': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=float64]
+Attributes:
+    long_name:    Adjusted cycle number that corresponds to the current index
+    conventions:  0...N, 0 : launch cycle, 1 : first complete cycle, 'DATA_MODE': <xarray.Variable (N_CYCLE: 38)> Size: 304B     
+[38 values with dtype=object]
+Attributes:
+    long_name:    Delayed mode or real time data
+    conventions:  R : real time; D : delayed mode; A : real time with adjustment, 'HISTORY_INSTITUTION': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Institution which performed action
+    conventions:  Argo reference table 4, 'HISTORY_STEP': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Step in data processing
+    conventions:  Argo reference table 12, 'HISTORY_SOFTWARE': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Name of software which performed action
+    conventions:  Institution dependent, 'HISTORY_SOFTWARE_RELEASE': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Version/release of software which performed action
+    conventions:  Institution dependent, 'HISTORY_REFERENCE': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Reference of database
+    conventions:  Institution dependent, 'HISTORY_DATE': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Date the history record was created
+    conventions:  YYYYMMDDHHMISS, 'HISTORY_ACTION': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Action performed on data
+    conventions:  Argo reference table 7, 'HISTORY_PARAMETER': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Station parameter action is performed on
+    conventions:  Reference table AUX_3a, 'HISTORY_PREVIOUS_VALUE': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=float64]
+Attributes:
+    long_name:  Parameter/Flag previous value before action, 'HISTORY_INDEX_DIMENSION': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Name of dimension to which HISTORY_START_INDEX and HISTORY_...
+    conventions:  C: N_CYCLE, M: N_MEASUREMENT, 'HISTORY_START_INDEX': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=float64]
+Attributes:
+    long_name:  Start index action applied on, 'HISTORY_STOP_INDEX': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=float64]
+Attributes:
+    long_name:  Stop index action applied on, 'HISTORY_QCTEST': <xarray.Variable (N_HISTORY: 13)> Size: 104B
+[13 values with dtype=object]
+Attributes:
+    long_name:    Documentation of tests performed, tests failed (in hex form)
+    conventions:  Write tests performed when ACTION=QCP$; tests failed when A...})
+###################### TRAJ FILE #######################
+>>> traj=xr.open_dataset(r"C:\Users\Jacopo\CNR\GIOVANNI LA FORGIA - IMU\POLIMNIA\4903848_Rtraj.nc")
+>>> traj
+<xarray.Dataset> Size: 76MB
+Dimensions:                              (N_PARAM: 32, N_MEASUREMENT: 83042,
+                                          N_CYCLE: 38, N_CALIB_PARAM: 2,
+                                          N_CALIB_JULD: 1, N_HISTORY: 29)
+Dimensions without coordinates: N_PARAM, N_MEASUREMENT, N_CYCLE, N_CALIB_PARAM,
+                                N_CALIB_JULD, N_HISTORY
+Data variables: (12/189)
+    DATA_TYPE                            object 8B ...
+    FORMAT_VERSION                       object 8B ...
+    HANDBOOK_VERSION                     object 8B ...
+    REFERENCE_DATE_TIME                  object 8B ...
+    DATE_CREATION                        object 8B ...
+    DATE_UPDATE                          object 8B ...
+    ...                                   ...
+    HISTORY_PARAMETER                    (N_HISTORY) object 232B ...
+    HISTORY_PREVIOUS_VALUE               (N_HISTORY) float32 116B ...
+    HISTORY_INDEX_DIMENSION              (N_HISTORY) object 232B ...
+    HISTORY_START_INDEX                  (N_HISTORY) float64 232B ...
+    HISTORY_STOP_INDEX                   (N_HISTORY) float64 232B ...
+    HISTORY_QCTEST                       (N_HISTORY) object 232B ...
+Attributes:
+    title:                        Argo float trajectory file
+    institution:                  CORIOLIS
+    source:                       Argo float
+    history:                      2025-10-27T15:34:50Z creation; 2025-12-14T1...
+    references:                   http://www.argodatamgt.org/Documentation
+    user_manual_version:          3.4
+    Conventions:                  Argo-3.2 CF-1.6
+    featureType:                  trajectory
+    decoder_version:              CODA_082f
+    id:                           https://doi.org/10.17882/42182
+    comment_on_resolution:        PRES variable resolutions depend on measure...
+    comment_on_measurement_code:  Meaning of some specific measurement codes ...
+>>> traj.variables
+Frozen({'DATA_TYPE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Data type
+    conventions:  Argo reference table 1, 'FORMAT_VERSION': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  File format version, 'HANDBOOK_VERSION': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Data handbook version, 'REFERENCE_DATE_TIME': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Date of reference for Julian days
+    conventions:  YYYYMMDDHHMISS, 'DATE_CREATION': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Date of file creation
+    conventions:  YYYYMMDDHHMISS, 'DATE_UPDATE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Date of update of this file
+    conventions:  YYYYMMDDHHMISS, 'PLATFORM_NUMBER': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Float unique identifier
+    conventions:  WMO float identifier : A9IIIII, 'PROJECT_NAME': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Name of the project, 'PI_NAME': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Name of the principal investigator, 'TRAJECTORY_PARAMETERS': <xarray.Variable (N_PARAM: 32)> Size: 256B
+[32 values with dtype=object]
+Attributes:
+    long_name:    List of available parameters
+    conventions:  Argo reference table 3, 'DATA_CENTRE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Data centre in charge of float data processing
+    conventions:  Argo reference table 4, 'DATA_STATE_INDICATOR': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Degree of processing the data have passed through
+    conventions:  Argo reference table 6, 'PLATFORM_TYPE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Type of float
+    conventions:  Argo reference table 23, 'FLOAT_SERIAL_NO': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Serial number of the float, 'FIRMWARE_VERSION': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Instrument firmware version, 'WMO_INST_TYPE': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Coded instrument type
+    conventions:  Argo reference table 8, 'POSITIONING_SYSTEM': <xarray.Variable ()> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Positioning system, 'JULD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Julian day (UTC) of each measurement relative to REFERENC...
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05
+    axis:           T, 'JULD_STATUS': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    Status of the date and time
+    conventions:  Argo reference table 19, 'JULD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    Quality on date and time
+    conventions:  Argo reference table 2, 'JULD_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Adjusted julian day (UTC) of each measurement relative to...
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05
+    axis:           T, 'JULD_ADJUSTED_STATUS': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    Status of the JULD_ADJUSTED date
+    conventions:  Argo reference table 19, 'JULD_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    Quality on adjusted date and time
+    conventions:  Argo reference table 2, 'JULD_DATA_MODE': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    Delayed mode or real time data
+    conventions:  R : real time; D : delayed mode; A : real time with adjustment, 'LATITUDE': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=float64]
+Attributes:
+    long_name:      Latitude of each location
+    standard_name:  latitude
+    units:          degree_north
+    valid_min:      -90.0
+    valid_max:      90.0
+    axis:           Y, 'LONGITUDE': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=float64]
+Attributes:
+    long_name:      Longitude of each location
+    standard_name:  longitude
+    units:          degree_east
+    valid_min:      -180.0
+    valid_max:      180.0
+    axis:           X, 'POSITION_ACCURACY': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    Estimated accuracy in latitude and longitude
+    conventions:  Argo reference table 5, 'POSITION_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    Quality on position
+    conventions:  Argo reference table 2, 'AXES_ERROR_ELLIPSE_MAJOR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB       
+[83042 values with dtype=float32]
+Attributes:
+    long_name:  Semi-major axis of error ellipse from positioning system
+    units:      meters, 'AXES_ERROR_ELLIPSE_MINOR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:  Semi-minor axis of error ellipse from positioning system
+    units:      meters, 'AXES_ERROR_ELLIPSE_ANGLE': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:  Angle of error ellipse from positioning system
+    units:      Degrees (from North when heading East), 'SATELLITE_NAME': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB   
+[83042 values with dtype=object]
+Attributes:
+    long_name:  Satellite name from positioning system, 'CYCLE_NUMBER': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB     
+[83042 values with dtype=float64]
+Attributes:
+    long_name:    Float cycle number of the measurement
+    conventions:  0...N, 0 : launch cycle, 1 : first complete cycle, 'CYCLE_NUMBER_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=float64]
+Attributes:
+    long_name:    Adjusted float cycle number of the measurement
+    conventions:  0...N, 0 : launch cycle, 1 : first complete cycle, 'MEASUREMENT_CODE': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=float64]
+Attributes:
+    long_name:    Flag referring to a measurement event in the cycle
+    conventions:  Argo reference table 15, 'TRAJECTORY_PARAMETER_DATA_MODE': <xarray.Variable (N_MEASUREMENT: 83042, N_PARAM: 32)> Size: 21MB
+[2657344 values with dtype=object]
+Attributes:
+    long_name:    Delayed mode or real time data
+    conventions:  R : real time; D : delayed mode; A : real time with adjustment, 'TEMP': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Sea temperature in-situ ITS-90 scale
+    standard_name:   sea_water_temperature
+    units:           degree_Celsius
+    valid_min:       -2.5
+    valid_max:       40.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'TEMP_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'TEMP_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Sea temperature in-situ ITS-90 scale
+    standard_name:   sea_water_temperature
+    units:           degree_Celsius
+    valid_min:       -2.5
+    valid_max:       40.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'TEMP_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'TEMP_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           degree_Celsius
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'PRES': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:              Sea water pressure, equals 0 at sea-level
+    standard_name:          sea_water_pressure
+    units:                  decibar
+    valid_min:              0.0
+    valid_max:              12000.0
+    C_format:               %8.2f
+    FORTRAN_format:         F8.2
+    resolution:             0.01
+    comment_on_resolution:  PRES resolution is 0.01 dbar for CTD sensor and 0...
+    axis:                   Z, 'PRES_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PRES_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:              Sea water pressure, equals 0 at sea-level
+    standard_name:          sea_water_pressure
+    units:                  decibar
+    valid_min:              0.0
+    valid_max:              12000.0
+    C_format:               %8.2f
+    FORTRAN_format:         F8.2
+    resolution:             0.01
+    comment_on_resolution:  PRES_ADJUSTED resolution is 0.01 dbar for CTD sen...
+    axis:                   Z, 'PRES_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PRES_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           decibar
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'PSAL': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Practical salinity
+    standard_name:   sea_water_salinity
+    units:           psu
+    valid_min:       2.0
+    valid_max:       41.0
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      1e-04, 'PSAL_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PSAL_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Practical salinity
+    standard_name:   sea_water_salinity
+    units:           psu
+    valid_min:       2.0
+    valid_max:       41.0
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      1e-04, 'PSAL_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PSAL_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           psu
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      1e-04, 'FLUORESCENCE_CHLA': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Chlorophyll-A signal from fluorescence sensor
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'FLUORESCENCE_CHLA_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BETA_BACKSCATTERING700': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Total angle specific volume from backscattering sensor a...
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'BETA_BACKSCATTERING700_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'FLUORESCENCE_CDOM': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Raw fluorescence from coloured dissolved organic matter ...
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'FLUORESCENCE_CDOM_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CHLA': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Chlorophyll-A
+    standard_name:   mass_concentration_of_chlorophyll_a_in_sea_water
+    units:           mg/m3
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      0.025, 'CHLA_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CHLA_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Chlorophyll-A
+    standard_name:   mass_concentration_of_chlorophyll_a_in_sea_water
+    units:           mg/m3
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      0.025, 'CHLA_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CHLA_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           mg/m3
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      0.025, 'CHLA_FLUORESCENCE': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Chlorophyll fluorescence with factory calibration
+    units:           ru
+    valid_min:       -0.2
+    valid_max:       100.0
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      0.025, 'CHLA_FLUORESCENCE_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CHLA_FLUORESCENCE_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB     
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Chlorophyll fluorescence with factory calibration
+    units:           ru
+    valid_min:       -0.2
+    valid_max:       100.0
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      0.025, 'CHLA_FLUORESCENCE_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CHLA_FLUORESCENCE_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           ru
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      0.025, 'BBP700': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Particle backscattering at 700 nanometers
+    units:           m-1
+    C_format:        %.7f
+    FORTRAN_format:  F.7
+    resolution:      1e-07, 'BBP700_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BBP700_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Particle backscattering at 700 nanometers
+    units:           m-1
+    C_format:        %.7f
+    FORTRAN_format:  F.7
+    resolution:      1e-07, 'BBP700_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BBP700_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           m-1
+    C_format:        %.7f
+    FORTRAN_format:  F.7
+    resolution:      1e-07, 'CDOM': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Concentration of coloured dissolved organic matter in se...
+    units:           ppb
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'CDOM_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CDOM_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Concentration of coloured dissolved organic matter in se...
+    units:           ppb
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'CDOM_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'CDOM_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           ppb
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'C1PHASE_DOXY': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Uncalibrated phase shift reported by oxygen sensor
+    units:           degree
+    valid_min:       10.0
+    valid_max:       70.0
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'C1PHASE_DOXY_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'C2PHASE_DOXY': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Uncalibrated phase shift reported by oxygen sensor
+    units:           degree
+    valid_min:       0.0
+    valid_max:       15.0
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'C2PHASE_DOXY_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'TEMP_DOXY': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Sea temperature from oxygen sensor ITS-90 scale
+    standard_name:   temperature_of_sensor_for_oxygen_in_sea_water
+    units:           degree_Celsius
+    valid_min:       -2.0
+    valid_max:       40.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'TEMP_DOXY_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'C1PHASE_DOXY_STD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Standard deviation of uncalibrated phase shift reported ...
+    units:           degree
+    valid_min:       10.0
+    valid_max:       70.0
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'C1PHASE_DOXY_STD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'C2PHASE_DOXY_STD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Standard deviation of uncalibrated phase shift reported ...
+    units:           degree
+    valid_min:       0.0
+    valid_max:       15.0
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'C2PHASE_DOXY_STD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'TEMP_DOXY_STD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Standard deviation of sea temperature from oxygen sensor...
+    units:           degree_Celsius
+    valid_min:       -2.0
+    valid_max:       40.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'TEMP_DOXY_STD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PRES_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of sea water pressure, equals 0 at sea-level
+    units:           decibar
+    valid_min:       0.0
+    valid_max:       12000.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'PRES_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'C1PHASE_DOXY_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of uncalibrated phase shift reported by oxy...
+    units:           degree
+    valid_min:       10.0
+    valid_max:       70.0
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'C1PHASE_DOXY_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'C2PHASE_DOXY_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of uncalibrated phase shift reported by oxy...
+    units:           degree
+    valid_min:       0.0
+    valid_max:       15.0
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'C2PHASE_DOXY_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'TEMP_DOXY_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of sea temperature from oxygen sensor ITS-9...
+    units:           degree_Celsius
+    valid_min:       -2.0
+    valid_max:       40.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'TEMP_DOXY_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'DOXY': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Dissolved oxygen
+    standard_name:   moles_of_oxygen_per_unit_mass_in_sea_water
+    units:           micromole/kg
+    valid_min:       -5.0
+    valid_max:       600.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'DOXY_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'DOXY_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Dissolved oxygen
+    standard_name:   moles_of_oxygen_per_unit_mass_in_sea_water
+    units:           micromole/kg
+    valid_min:       -5.0
+    valid_max:       600.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'DOXY_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'DOXY_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           micromole/kg
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'FLUORESCENCE_CHLA_STD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Standard deviation of chlorophyll-A signal from fluoresc...
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'FLUORESCENCE_CHLA_STD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BETA_BACKSCATTERING700_STD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB     
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Standard deviation of total angle specific volume from b...
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'BETA_BACKSCATTERING700_STD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'FLUORESCENCE_CDOM_STD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Standard deviation of raw fluorescence from coloured dis...
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'FLUORESCENCE_CDOM_STD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'FLUORESCENCE_CHLA_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of chlorophyll-A signal from fluorescence s...
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'FLUORESCENCE_CHLA_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'BETA_BACKSCATTERING700_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB     
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of total angle specific volume from backsca...
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'BETA_BACKSCATTERING700_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'FLUORESCENCE_CDOM_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of raw fluorescence from coloured dissolved...
+    units:           count
+    C_format:        %.1f
+    FORTRAN_format:  F.1
+    resolution:      0.1, 'FLUORESCENCE_CDOM_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'TEMP_STD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Standard deviation of sea temperature in-situ ITS-90 scale
+    units:           degree_Celsius
+    valid_min:       -2.5
+    valid_max:       40.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'TEMP_STD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PSAL_STD': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Standard deviation of practical salinity
+    units:           psu
+    valid_min:       2.0
+    valid_max:       41.0
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      1e-04, 'PSAL_STD_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'TEMP_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of sea temperature in-situ ITS-90 scale
+    units:           degree_Celsius
+    valid_min:       -2.5
+    valid_max:       40.0
+    C_format:        %.3f
+    FORTRAN_format:  F.3
+    resolution:      0.001, 'TEMP_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PSAL_MED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Median value of practical salinity
+    units:           psu
+    valid_min:       2.0
+    valid_max:       41.0
+    C_format:        %.4f
+    FORTRAN_format:  F.4
+    resolution:      1e-04, 'PSAL_MED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PPOX_DOXY': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Partial pressure of oxygen
+    units:           millibar
+    valid_min:       -5.0
+    valid_max:       5000.0
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'PPOX_DOXY_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PPOX_DOXY_ADJUSTED': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Partial pressure of oxygen
+    units:           millibar
+    valid_min:       -5.0
+    valid_max:       5000.0
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'PPOX_DOXY_ADJUSTED_QC': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 664kB
+[83042 values with dtype=object]
+Attributes:
+    long_name:    quality flag
+    conventions:  Argo reference table 2, 'PPOX_DOXY_ADJUSTED_ERROR': <xarray.Variable (N_MEASUREMENT: 83042)> Size: 332kB       
+[83042 values with dtype=float32]
+Attributes:
+    long_name:       Contains the error on the adjusted values as determined ...
+    units:           millibar
+    C_format:        %8.2f
+    FORTRAN_format:  F8.2
+    resolution:      0.01, 'JULD_DESCENT_START': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Descent start date of the cycle
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_DESCENT_START_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of descent start date of the cycle
+    conventions:  Argo reference table 19, 'JULD_FIRST_STABILIZATION': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Time when a float first becomes water-neutral
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_FIRST_STABILIZATION_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B        
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of time when a float first becomes water-neutral
+    conventions:  Argo reference table 19, 'JULD_DESCENT_END': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Descent end date of the cycle
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_DESCENT_END_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of descent end date of the cycle
+    conventions:  Argo reference table 19, 'JULD_PARK_START': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Drift start date of the cycle
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_PARK_START_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of drift start date of the cycle
+    conventions:  Argo reference table 19, 'JULD_PARK_END': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Drift end date of the cycle
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_PARK_END_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of drift end date of the cycle
+    conventions:  Argo reference table 19, 'JULD_DEEP_DESCENT_END': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Deep descent end date of the cycle
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_DEEP_DESCENT_END_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of deep descent end date of the cycle
+    conventions:  Argo reference table 19, 'JULD_DEEP_PARK_START': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Deep park start date of the cycle
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_DEEP_PARK_START_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of deep park start date of the cycle
+    conventions:  Argo reference table 19, 'JULD_ASCENT_START': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Start date of the ascent to the surface
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_ASCENT_START_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of start date of the ascent to the surface
+    conventions:  Argo reference table 19, 'JULD_DEEP_ASCENT_START': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Deep ascent start date of the cycle
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_DEEP_ASCENT_START_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of deep ascent start date of the cycle
+    conventions:  Argo reference table 19, 'JULD_ASCENT_END': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      End date of ascent to the surface
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_ASCENT_END_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of end date of ascent to the surface
+    conventions:  Argo reference table 19, 'JULD_TRANSMISSION_START': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Start date of transmission
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_TRANSMISSION_START_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of start date of transmission
+    conventions:  Argo reference table 19, 'JULD_FIRST_MESSAGE': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Date of earliest float message received
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_FIRST_MESSAGE_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of date of earliest float message received
+    conventions:  Argo reference table 19, 'JULD_FIRST_LOCATION': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Date of earliest location
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_FIRST_LOCATION_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of date of earliest location
+    conventions:  Argo reference table 19, 'JULD_LAST_LOCATION': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Date of latest location
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_LAST_LOCATION_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of date of latest location
+    conventions:  Argo reference table 19, 'JULD_LAST_MESSAGE': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Date of latest float message received
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_LAST_MESSAGE_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of date of latest float message received
+    conventions:  Argo reference table 19, 'JULD_TRANSMISSION_END': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=datetime64[ns]]
+Attributes:
+    long_name:      Transmission end date
+    standard_name:  time
+    conventions:    Relative julian days with decimal part (as parts of day)
+    resolution:     1.1574074074074073e-05, 'JULD_TRANSMISSION_END_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of transmission end date
+    conventions:  Argo reference table 19, 'CLOCK_OFFSET': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=timedelta64[ns]]
+Attributes:
+    long_name:    Time of float clock drift
+    conventions:  Days with decimal part (as parts of day), 'GROUNDED': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Did the profiler touch the ground for that cycle?
+    conventions:  Argo reference table 20, 'REPRESENTATIVE_PARK_PRESSURE': <xarray.Variable (N_CYCLE: 38)> Size: 152B
+[38 values with dtype=float32]
+Attributes:
+    long_name:  Best pressure value during park phase
+    units:      decibar, 'REPRESENTATIVE_PARK_PRESSURE_STATUS': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=object]
+Attributes:
+    long_name:    Status of best pressure value during park phase
+    conventions:  Argo reference table 21, 'CONFIG_MISSION_NUMBER': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=float64]
+Attributes:
+    long_name:    Unique number denoting the missions performed by the float
+    conventions:  1...N, 1 : first complete mission, 'CYCLE_NUMBER_INDEX': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=float64]
+Attributes:
+    long_name:    Cycle number that corresponds to the current index
+    conventions:  0...N, 0 : launch cycle, 1 : first complete cycle, 'CYCLE_NUMBER_INDEX_ADJUSTED': <xarray.Variable (N_CYCLE: 38)> Size: 304B
+[38 values with dtype=float64]
+Attributes:
+    long_name:    Adjusted cycle number that corresponds to the current index
+    conventions:  0...N, 0 : launch cycle, 1 : first complete cycle, 'DATA_MODE': <xarray.Variable (N_CYCLE: 38)> Size: 304B     
+[38 values with dtype=object]
+Attributes:
+    long_name:    Delayed mode or real time data
+    conventions:  R : real time; D : delayed mode; A : real time with adjustment, 'SCIENTIFIC_CALIB_PARAMETER': <xarray.Variable (N_CALIB_PARAM: 2, N_PARAM: 32)> Size: 512B
+[64 values with dtype=object]
+Attributes:
+    long_name:    List of parameters with calibration information
+    conventions:  Argo reference table 3, 'SCIENTIFIC_CALIB_EQUATION': <xarray.Variable (N_CALIB_PARAM: 2, N_PARAM: 32)> Size: 512B
+[64 values with dtype=object]
+Attributes:
+    long_name:  Calibration equation for this parameter, 'SCIENTIFIC_CALIB_COEFFICIENT': <xarray.Variable (N_CALIB_PARAM: 2, N_PARAM: 32)> Size: 512B
+[64 values with dtype=object]
+Attributes:
+    long_name:  Calibration coefficients for this equation, 'SCIENTIFIC_CALIB_COMMENT': <xarray.Variable (N_CALIB_PARAM: 2, N_PARAM: 32)> Size: 512B
+[64 values with dtype=object]
+Attributes:
+    long_name:  Comment applying to this parameter calibration, 'SCIENTIFIC_CALIB_DATE': <xarray.Variable (N_CALIB_PARAM: 2, N_PARAM: 32)> Size: 512B
+[64 values with dtype=object]
+Attributes:
+    long_name:    Date of calibration
+    conventions:  YYYYMMDDHHMISS, 'JULD_CALIB_EQUATION': <xarray.Variable (N_CALIB_JULD: 1)> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Calibration equation for JULD, 'JULD_CALIB_COEFFICIENT': <xarray.Variable (N_CALIB_JULD: 1)> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:  Calibration coefficients for JULD equation, 'JULD_CALIB_COMMENT': <xarray.Variable (N_CALIB_JULD: 1)> Size: 8B   
+[1 values with dtype=object]
+Attributes:
+    long_name:  Comment applying to JULD calibration, 'JULD_CALIB_DATE': <xarray.Variable (N_CALIB_JULD: 1)> Size: 8B
+[1 values with dtype=object]
+Attributes:
+    long_name:    Date of JULD calibration
+    conventions:  YYYYMMDDHHMISS, 'HISTORY_INSTITUTION': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Institution which performed action
+    conventions:  Argo reference table 4, 'HISTORY_STEP': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Step in data processing
+    conventions:  Argo reference table 12, 'HISTORY_SOFTWARE': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Name of software which performed action
+    conventions:  Institution dependent, 'HISTORY_SOFTWARE_RELEASE': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Version/release of software which performed action
+    conventions:  Institution dependent, 'HISTORY_REFERENCE': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Reference of database
+    conventions:  Institution dependent, 'HISTORY_DATE': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Date the history record was created
+    conventions:  YYYYMMDDHHMISS, 'HISTORY_ACTION': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Action performed on data
+    conventions:  Argo reference table 7, 'HISTORY_PARAMETER': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Parameter action is performed on
+    conventions:  Argo reference table 3, 'HISTORY_PREVIOUS_VALUE': <xarray.Variable (N_HISTORY: 29)> Size: 116B
+[29 values with dtype=float32]
+Attributes:
+    long_name:  Parameter/Flag previous value before action, 'HISTORY_INDEX_DIMENSION': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Name of dimension to which HISTORY_START_INDEX and HISTORY_...
+    conventions:  C: N_CYCLE, M: N_MEASUREMENT, 'HISTORY_START_INDEX': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=float64]
+Attributes:
+    long_name:  Start index action applied on, 'HISTORY_STOP_INDEX': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=float64]
+Attributes:
+    long_name:  Stop index action applied on, 'HISTORY_QCTEST': <xarray.Variable (N_HISTORY: 29)> Size: 232B
+[29 values with dtype=object]
+Attributes:
+    long_name:    Documentation of tests performed, tests failed (in hex form)
+    conventions:  Write tests performed when ACTION=QCP$; tests failed when A...})
